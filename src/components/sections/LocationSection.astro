@@ -1,0 +1,171 @@
+---
+import imageUrlBuilder from "@sanity/image-url";
+import { sanityClient } from "sanity:client";
+
+const { section } = Astro.props;
+const location = section?.location;
+
+const builder = imageUrlBuilder(sanityClient);
+
+const imageUrl = location?.image?.asset
+  ? builder
+      .image(location.image)
+      .width(1600)
+      .height(1100)
+      .fit("crop")
+      .auto("format")
+      .quality(88)
+      .url()
+  : null;
+
+const address = [
+  location?.street,
+  location?.city,
+  location?.state,
+  location?.zip,
+]
+  .filter(Boolean)
+  .join(", ");
+---
+
+<section class="location-section">
+  <div class="container">
+
+    <header>
+      {section?.eyebrow && (
+        <p class="eyebrow">{section.eyebrow}</p>
+      )}
+
+      <h2>{section?.heading}</h2>
+
+      {section?.accentText && (
+        <p class="accent">{section.accentText}</p>
+      )}
+    </header>
+
+    <div class="location-grid">
+
+      {imageUrl && (
+        <img
+          src={imageUrl}
+          alt={location?.image?.alt ?? location?.name ?? ""}
+          loading="lazy"
+        />
+      )}
+
+      <div class="location-copy">
+        <p class="label">LOCATION</p>
+
+        {location?.name && (
+          <h3>{location.name}</h3>
+        )}
+
+        {address && (
+          <p class="address">{address}</p>
+        )}
+
+        {
+          section?.showParking &&
+          location?.parkingInstructions && (
+            <div class="parking">
+              <span>PARKING</span>
+              <p>{location.parkingInstructions}</p>
+            </div>
+          )
+        }
+
+        {location?.mapsUrl && (
+          <a
+            href={location.mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GET DIRECTIONS ↗
+          </a>
+        )}
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<style>
+  .location-section {
+    padding-block: var(--section-space-lg);
+    background: var(--color-brand-white);
+  }
+
+  .eyebrow,
+  .label,
+  .parking span {
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin-top: 1rem;
+    max-width: 1000px;
+    font-size: clamp(3rem, 7vw, 7rem);
+    text-transform: uppercase;
+  }
+
+  .accent {
+    font-family: var(--font-editorial);
+    font-size: clamp(2rem, 4vw, 4rem);
+    font-style: italic;
+  }
+
+  .location-grid {
+    display: grid;
+    grid-template-columns: 1.25fr 0.75fr;
+    gap: clamp(3rem, 7vw, 7rem);
+    align-items: center;
+    margin-top: clamp(3rem, 6vw, 6rem);
+  }
+
+  .location-grid > img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+
+  .location-copy h3 {
+    margin-top: 1rem;
+    font-size: clamp(2.5rem, 5vw, 5rem);
+    text-transform: uppercase;
+  }
+
+  .address {
+    max-width: 400px;
+    margin-top: 1rem;
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+  }
+
+  .parking {
+    margin-top: 2rem;
+  }
+
+  .parking p {
+    margin-top: 0.5rem;
+    color: var(--color-text-muted);
+  }
+
+  .location-copy > a {
+    display: inline-block;
+    margin-top: 2rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid currentColor;
+    font-size: 0.7rem;
+    font-weight: 800;
+  }
+
+  @media (max-width: 800px) {
+    .location-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

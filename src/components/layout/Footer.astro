@@ -1,0 +1,237 @@
+---
+import { sanityClient } from "sanity:client";
+import groq from "groq";
+import { resolveLink } from "../../lib/links";
+
+const footerQuery = groq`
+  *[_id == "siteSettings"][0] {
+    churchName,
+    tagline,
+    footerDescription,
+    copyrightText,
+
+    footerLinks[] {
+      label,
+      linkType,
+      externalUrl,
+      openInNewTab,
+      internalPath,
+
+      internalReference-> {
+        _type,
+        title,
+        name,
+        "slug": slug.current,
+
+    parent-> {
+      "slug": slug.current,
+
+      parent-> {
+        "slug": slug.current
+      }
+    }
+  }
+},
+
+    socialLinks[] {
+      platform,
+      url
+    }
+  }
+`;
+
+const settings = await sanityClient.fetch(footerQuery);
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <p class="brand-name">
+        PIWC
+        <span>Philadelphia</span>
+      </p>
+
+      {settings?.tagline && (
+        <p class="tagline">
+          {settings.tagline}
+        </p>
+      )}
+
+      {settings?.footerDescription && (
+        <p class="description">
+          {settings.footerDescription}
+        </p>
+      )}
+    </div>
+
+    <div class="footer-navigation">
+      <p class="footer-label">EXPLORE</p>
+
+      <nav aria-label="Footer navigation">
+        {
+          settings?.footerLinks?.map((link: any) => (
+            <a
+              href={resolveLink(link)}
+              target={link.openInNewTab ? "_blank" : undefined}
+              rel={link.openInNewTab ? "noopener noreferrer" : undefined}
+            >
+              {link.label}
+              <span>→</span>
+            </a>
+          ))
+        }
+      </nav>
+    </div>
+
+    <div class="footer-social">
+      <p class="footer-label">FOLLOW</p>
+
+      <div class="social-links">
+        {
+          settings?.socialLinks?.map((item: any) => (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {item.platform}
+              <span>↗</span>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="container footer-bottom">
+    <p>
+      © {year} {settings?.copyrightText ?? settings?.churchName ?? "PIWC Philadelphia"}
+    </p>
+
+    <div>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: var(--color-brand-charcoal);
+    color: var(--color-brand-white);
+    padding-top: var(--section-space-md);
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 0.8fr 0.8fr;
+    gap: clamp(3rem, 8vw, 8rem);
+    padding-bottom: var(--section-space-md);
+  }
+
+  .brand-name {
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 6vw, 6rem);
+    font-weight: 800;
+    line-height: 0.8;
+    letter-spacing: -0.05em;
+    text-transform: uppercase;
+  }
+
+  .brand-name span {
+    margin-top: 0.8rem;
+    font-size: 0.22em;
+    letter-spacing: 0.25em;
+  }
+
+  .tagline {
+    margin-top: 2rem;
+    color: var(--color-brand-gold);
+    font-family: var(--font-editorial);
+    font-size: 1.5rem;
+    font-style: italic;
+  }
+
+  .description {
+    max-width: 520px;
+    margin-top: 1.25rem;
+    color: rgb(255 255 255 / 62%);
+  }
+
+  .footer-label {
+    margin-bottom: 1.5rem;
+    color: var(--color-brand-gold);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+  }
+
+  .footer-navigation nav,
+  .social-links {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .footer-navigation a,
+  .social-links a {
+    display: flex;
+    width: fit-content;
+    gap: 0.75rem;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .footer-navigation a span,
+  .social-links a span {
+    transition: transform var(--transition-fast);
+  }
+
+  .footer-navigation a:hover span,
+  .social-links a:hover span {
+    transform: translateX(4px);
+  }
+
+  .footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    padding-block: 1.5rem;
+    border-top: 1px solid rgb(255 255 255 / 12%);
+    color: rgb(255 255 255 / 45%);
+    font-size: 0.72rem;
+  }
+
+  .footer-bottom div {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 850px) {
+    .footer-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .footer-brand {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .footer-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .footer-brand {
+      grid-column: auto;
+    }
+
+    .footer-bottom {
+      flex-direction: column;
+    }
+  }
+</style>

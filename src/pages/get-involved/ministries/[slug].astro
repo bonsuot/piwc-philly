@@ -1,0 +1,736 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import imageUrlBuilder from "@sanity/image-url";
+import { sanityClient } from "sanity:client";
+import groq from "groq";
+
+export async function getStaticPaths() {
+  const ministries = await sanityClient.fetch(
+    groq`
+      *[
+        _type == "ministry" &&
+        defined(slug.current)
+      ] {
+        "slug": slug.current
+      }
+    `
+  );
+
+  return ministries.map((ministry: any) => ({
+    params: {
+      slug: ministry.slug,
+    },
+  }));
+}
+
+const { slug } = Astro.params;
+
+const ministryQuery = groq`
+  *[
+    _type == "ministry" &&
+    slug.current == $slug
+  ][0] {
+    _id,
+    name,
+    "slug": slug.current,
+    audience,
+    shortDescription,
+    description,
+    contactEmail,
+
+    image {
+      asset,
+      hotspot,
+      crop,
+      alt,
+      caption
+    },
+
+    heroImage {
+      asset,
+      hotspot,
+      crop,
+      alt
+    },
+
+    leaders[]-> {
+      _id,
+      name,
+      role,
+      shortBio,
+
+      photo {
+        asset,
+        hotspot,
+        crop,
+        alt
+      }
+    },
+
+     meetingInfo {
+      day,
+      time,
+      notes,
+
+      location-> {
+        name,
+        street,
+        city,
+        state,
+        zip,
+        mapsUrl
+      }
+    },
+
+    cta {
+      style,
+
+      link {
+        label,
+        linkType,
+        externalUrl,
+        internalPath,
+        openInNewTab,
+
+        internalReference-> {
+          _type,
+          title,
+          name,
+          "slug": slug.current,
+
+          parent-> {
+            "slug": slug.current,
+
+            parent-> {
+              "slug": slug.current
+            }
+          }
+        }
+      }
+    },
+
+     "upcomingEvents": *[
+      _type == "event" &&
+      references(^._id) &&
+      startDate >= string::split(now(), "T")[0]
+    ] | order(startDate asc)[0...3] {
+      _id,
+      title,
+      "slug": slug.current,
+      startDate,
+      startTime,
+      shortDescription,
+
+      image {
+        asset,
+        hotspot,
+        crop,
+        alt
+      }
+    }
+  }
+
+`;
+
+const ministry = await sanityClient.fetch(
+  ministryQuery,
+  { slug }
+);
+
+if (!ministry) {
+  return Astro.redirect("/get-involved/ministries");
+}
+
+const builder = imageUrlBuilder(sanityClient);
+
+const heroSource =
+  ministry?.heroImage?.asset
+    ? ministry.heroImage
+    : ministry?.image;
+
+const heroImage = heroSource?.asset
+  ? builder
+      .image(heroSource)
+      .width(2200)
+      .height(1400)
+      .fit("crop")
+      .auto("format")
+      .quality(90)
+      .url()
+  : "";
+---
+
+<BaseLayout
+  title={`${ministry.name} | PIWC Philadelphia`}
+  description={
+    ministry.shortDescription ??
+    `Learn more about ${ministry.name} at PIWC Philadelphia.`
+  }
+>
+  <main>
+
+    <section class="ministry-hero">
+      {
+        heroImage && (
+          <img
+            src={heroImage}
+            alt={heroSource?.alt ?? ministry.name}
+          />
+        )
+      }
+
+      <div class="overlay"></div>
+
+      <div class="container hero-content">
+        {
+          ministry.audience && (
+            <p class="eyebrow">
+              {ministry.audience.replace("-", " ")}
+            </p>
+          )
+        }
+
+        <h1>{ministry.name}</h1>
+      </div>
+    </section>
+
+    <section class="ministry-intro">
+      <div class="container intro-grid">
+        <div>
+          <p class="eyebrow dark">
+            FIND YOUR COMMUNITY
+          </p>
+
+          <h2>
+            THERE'S A PLACE
+            <span>for you.</span>
+          </h2>
+        </div>
+
+        <div class="copy">
+          {
+            ministry.shortDescription && (
+              <p class="lead">
+                {ministry.shortDescription}
+              </p>
+            )
+          }
+
+          {
+            ministry.description && (
+              <p>
+                {ministry.description}
+              </p>
+            )
+          }
+
+          {
+            ministry.contactEmail && (
+              <a
+                href={`mailto:${ministry.contactEmail}`}
+                class="contact-link"
+              >
+                GET CONNECTED →
+              </a>
+            )
+          }
+        </div>
+      </div>
+    </section>
+
+    {
+      ministry.meetingInfo && (
+        <section class="meeting-section">
+          <div class="container meeting-grid">
+            <div>
+              <p class="eyebrow dark">WHEN WE MEET</p>
+
+              <h2>
+                COME
+                <span>join us.</span>
+              </h2>
+            </div>
+
+            <div class="meeting-card">
+              {ministry.meetingInfo.day && (
+                <p>{ministry.meetingInfo.day}</p>
+              )}
+
+              {ministry.meetingInfo.time && (
+                <strong>{ministry.meetingInfo.time}</strong>
+              )}
+
+              {ministry.meetingInfo.location?.name && (
+                <div class="meeting-location">
+                  <span>{ministry.meetingInfo.location.name}</span>
+
+                  <p>
+                    {
+                      [
+                        ministry.meetingInfo.location.street,
+                        ministry.meetingInfo.location.city,
+                        ministry.meetingInfo.location.state,
+                        ministry.meetingInfo.location.zip,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")
+                    }
+                  </p>
+                </div>
+              )}
+
+              {ministry.meetingInfo.notes && (
+                <p class="meeting-notes">
+                  {ministry.meetingInfo.notes}
+                </p>
+              )}
+
+              {ministry.meetingInfo.location?.mapsUrl && (
+                <a
+                  href={ministry.meetingInfo.location.mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  GET DIRECTIONS ↗
+                </a>
+              )}
+            </div>
+          </div>
+        </section>
+      )
+}
+
+{
+  ministry.leaders?.length > 0 && (
+    <section class="leaders-section">
+      <div class="container">
+        <p class="eyebrow dark">OUR LEADERS</p>
+
+        <h2 class="leaders-heading">
+          MEET THE
+          <span>team.</span>
+        </h2>
+
+        <div class="leaders-grid">
+          {ministry.leaders.map((leader: any) => (
+            <article class="leader-card">
+              {
+                leader.photo?.asset && (
+                  <img
+                    src={builder
+                      .image(leader.photo)
+                      .width(900)
+                      .height(1100)
+                      .fit("crop")
+                      .auto("format")
+                      .quality(88)
+                      .url()}
+                    alt={leader.photo?.alt ?? leader.name}
+                    loading="lazy"
+                  />
+                )
+              }
+
+              <h3>{leader.name}</h3>
+
+              {leader.role && (
+                <p class="leader-role">{leader.role}</p>
+              )}
+
+              {leader.shortBio && (
+                <p class="leader-bio">{leader.shortBio}</p>
+              )}
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  ministry.upcomingEvents?.length > 0 && (
+    <section class="ministry-events">
+      <div class="container">
+        <p class="eyebrow">UPCOMING EVENTS</p>
+
+        <h2>
+          COME BE
+          <span>part of it.</span>
+        </h2>
+
+        <div class="events-grid">
+          {ministry.upcomingEvents.map((event: any) => (
+            <a
+              href={`/events/${event.slug}`}
+              class="event-card"
+            >
+              {
+                event.image?.asset && (
+                  <img
+                    src={builder
+                      .image(event.image)
+                      .width(1000)
+                      .height(800)
+                      .fit("crop")
+                      .auto("format")
+                      .quality(88)
+                      .url()}
+                    alt={event.image?.alt ?? event.title}
+                    loading="lazy"
+                  />
+                )
+              }
+
+              <div class="event-copy">
+                <h3>{event.title}</h3>
+
+                {event.startDate && (
+                  <p>{event.startDate}</p>
+                )}
+
+                {event.startTime && (
+                  <p>{event.startTime}</p>
+                )}
+
+                <span>VIEW EVENT →</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+    <section class="next-step">
+      <div class="container next-step-inner">
+        <p>YOUR NEXT STEP</p>
+
+        <h2>
+          READY TO
+          <span>connect?</span>
+        </h2>
+
+        {
+          ministry.contactEmail && (
+            <a href={`mailto:${ministry.contactEmail}`}>
+              CONTACT THE MINISTRY →
+            </a>
+          )
+        }
+      </div>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<style>
+  .ministry-hero {
+    position: relative;
+    display: flex;
+    min-height: 86svh;
+    align-items: flex-end;
+    overflow: hidden;
+    background: var(--color-brand-navy);
+    color: white;
+  }
+
+  .ministry-hero img,
+  .ministry-hero .overlay {
+    position: absolute;
+    inset: 0;
+  }
+
+  .ministry-hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ministry-hero .overlay {
+    background:
+      linear-gradient(
+        0deg,
+        rgb(3 14 28 / 80%) 0%,
+        rgb(3 14 28 / 20%) 65%
+      );
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    padding-bottom: clamp(4rem, 8vw, 7rem);
+  }
+
+  .eyebrow {
+    color: var(--color-brand-gold);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .hero-content h1 {
+    max-width: 1100px;
+    margin-top: 1rem;
+    font-size: clamp(4rem, 11vw, 10rem);
+    text-transform: uppercase;
+  }
+
+  .ministry-intro {
+    padding-block: var(--section-space-lg);
+    background: var(--color-brand-ivory);
+  }
+
+  .intro-grid {
+    display: grid;
+    grid-template-columns: 1fr 0.85fr;
+    gap: clamp(4rem, 8vw, 9rem);
+  }
+
+  .eyebrow.dark {
+    color: var(--color-brand-navy);
+  }
+
+  .intro-grid h2 {
+    margin-top: 1rem;
+    font-size: clamp(3rem, 7vw, 7rem);
+    text-transform: uppercase;
+  }
+
+  .intro-grid h2 span,
+  .next-step h2 span {
+    display: block;
+    font-family: var(--font-editorial);
+    font-weight: 400;
+    font-style: italic;
+    text-transform: none;
+  }
+
+  .copy {
+    padding-top: 2rem;
+  }
+
+  .copy p {
+    color: var(--color-text-muted);
+    font-size: 1.05rem;
+  }
+
+  .copy .lead {
+    margin-bottom: 1.5rem;
+    color: var(--color-brand-charcoal);
+    font-size: clamp(1.3rem, 2vw, 1.7rem);
+    line-height: 1.45;
+  }
+
+  .contact-link {
+    display: inline-block;
+    margin-top: 2rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid currentColor;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+
+  .next-step {
+    padding-block: var(--section-space-lg);
+    background: var(--color-brand-navy);
+    color: white;
+  }
+
+  .next-step-inner > p {
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+  }
+
+  .next-step h2 {
+    margin-top: 1.25rem;
+    max-width: 900px;
+    font-size: clamp(3.5rem, 8vw, 8rem);
+    text-transform: uppercase;
+  }
+
+  .next-step a {
+    display: inline-block;
+    margin-top: 2.5rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid currentColor;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+
+  @media (max-width: 850px) {
+    .intro-grid {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+
+    .copy {
+      padding-top: 0;
+    }
+  }
+
+  .meeting-section,
+.leaders-section {
+  padding-block: var(--section-space-lg);
+  background: var(--color-brand-white);
+}
+
+.meeting-grid {
+  display: grid;
+  grid-template-columns: 1fr 0.85fr;
+  gap: clamp(4rem, 8vw, 9rem);
+}
+
+.meeting-grid h2,
+.leaders-heading,
+.ministry-events h2 {
+  margin-top: 1rem;
+  font-size: clamp(3rem, 7vw, 7rem);
+  text-transform: uppercase;
+}
+
+.meeting-grid h2 span,
+.leaders-heading span,
+.ministry-events h2 span {
+  display: block;
+  font-family: var(--font-editorial);
+  font-weight: 400;
+  font-style: italic;
+  text-transform: none;
+}
+
+.meeting-card {
+  border-top: 1px solid var(--color-border);
+  padding-top: 1.5rem;
+}
+
+.meeting-card > p:first-child {
+  font-family: var(--font-editorial);
+  font-size: 1.5rem;
+  font-style: italic;
+}
+
+.meeting-card > strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  line-height: 0.9;
+}
+
+.meeting-location,
+.meeting-notes {
+  margin-top: 2rem;
+}
+
+.meeting-location p,
+.meeting-notes {
+  color: var(--color-text-muted);
+}
+
+.meeting-card > a {
+  display: inline-block;
+  margin-top: 1.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid currentColor;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.leaders-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 4rem;
+}
+
+.leader-card img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+
+.leader-card h3 {
+  margin-top: 1.25rem;
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  text-transform: uppercase;
+}
+
+.leader-role {
+  margin-top: 0.4rem;
+  color: var(--color-brand-gold);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.leader-bio {
+  margin-top: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.ministry-events {
+  padding-block: var(--section-space-lg);
+  background: var(--color-brand-navy);
+  color: white;
+}
+
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 4rem;
+}
+
+.event-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.event-copy {
+  padding-top: 1rem;
+}
+
+.event-copy h3 {
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  text-transform: uppercase;
+}
+
+.event-copy p {
+  margin-top: 0.3rem;
+  color: rgb(255 255 255 / 65%);
+}
+
+.event-copy span {
+  display: inline-block;
+  margin-top: 1rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+@media (max-width: 850px) {
+  .meeting-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .leaders-grid,
+  .events-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .leaders-grid,
+  .events-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

@@ -1,0 +1,254 @@
+---
+import imageUrlBuilder from "@sanity/image-url";
+import { sanityClient } from "sanity:client";
+import { resolveLink } from "../../lib/links";
+
+interface Props {
+  section: any;
+  ministries: any[];
+}
+
+const {
+  section,
+  ministries = [],
+} = Astro.props;
+
+const builder = imageUrlBuilder(sanityClient);
+
+function imageUrl(image: any) {
+  if (!image?.asset) return "";
+
+  return builder
+    .image(image)
+    .width(1200)
+    .height(1500)
+    .fit("crop")
+    .auto("format")
+    .quality(88)
+    .url();
+}
+
+function getHref(link: any) {
+  if (!link) return "#";
+
+  return link.linkType === "external"
+    ? link.externalUrl ?? "#"
+    : link.internalPath ?? "#";
+}
+---
+
+<section class="community-section">
+  <div class="container">
+
+    <div class="section-intro">
+      <div>
+        {section?.eyebrow && (
+          <p class="eyebrow">
+            {section.eyebrow}
+          </p>
+        )}
+
+        {section?.heading && (
+          <h2>{section.heading}</h2>
+        )}
+
+        {section?.accentText && (
+          <p class="accent">
+            {section.accentText}
+          </p>
+        )}
+      </div>
+
+      <div class="intro-side">
+        {section?.description && (
+          <p>{section.description}</p>
+        )}
+
+        {section?.cta?.link && (
+          <a href={resolveLink(section.cta.link)}>
+            {section.cta.link.label}
+            <span>→</span>
+          </a>
+        )}
+      </div>
+    </div>
+
+    <div class="ministry-grid">
+      {ministries.map((ministry) => (
+        <a
+          href={`/get-involved/ministries/${ministry.slug}`}
+          class="ministry-card"
+        >
+          <img
+            src={imageUrl(ministry.image)}
+            alt={ministry.image?.alt ?? ministry.name}
+            loading="lazy"
+          />
+
+          <div class="card-overlay"></div>
+
+          <div class="card-content">
+            {ministry.audience && (
+              <p>{ministry.audience.replace("-", " ")}</p>
+            )}
+
+            <h3>{ministry.name}</h3>
+
+            <span>EXPLORE →</span>
+          </div>
+        </a>
+      ))}
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .community-section {
+    padding-block: var(--section-space-lg);
+    background: var(--color-brand-ivory);
+  }
+
+  .section-intro {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: clamp(3rem, 8vw, 9rem);
+    align-items: end;
+    margin-bottom: clamp(3rem, 6vw, 6rem);
+  }
+
+  .eyebrow {
+    color: var(--color-brand-gold);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin-top: 1.25rem;
+    font-size: clamp(3rem, 7vw, 7rem);
+    text-transform: uppercase;
+  }
+
+  .accent {
+    margin-top: 0.5rem;
+    font-family: var(--font-editorial);
+    font-size: clamp(2rem, 4vw, 4.5rem);
+    font-style: italic;
+    line-height: 1;
+  }
+
+  .intro-side p {
+    color: var(--color-text-muted);
+    font-size: 1.05rem;
+  }
+
+  .intro-side a {
+    display: inline-flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid currentColor;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .ministry-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .ministry-card {
+    position: relative;
+    min-height: 520px;
+    overflow: hidden;
+    background: var(--color-brand-navy);
+    color: white;
+  }
+
+  .ministry-card img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 700ms ease;
+  }
+
+  .card-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        0deg,
+        rgb(3 14 28 / 80%) 0%,
+        rgb(3 14 28 / 10%) 65%
+      );
+  }
+
+  .card-content {
+    position: absolute;
+    z-index: 2;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: 2rem;
+  }
+
+  .card-content p {
+    margin-bottom: 0.75rem;
+    color: var(--color-brand-gold);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .card-content h3 {
+    font-size: clamp(2rem, 3vw, 3.5rem);
+    text-transform: uppercase;
+  }
+
+  .card-content span {
+    display: inline-block;
+    margin-top: 1.25rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+
+  .ministry-card:hover img {
+    transform: scale(1.04);
+  }
+
+  @media (max-width: 950px) {
+    .section-intro {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .ministry-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .ministry-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .ministry-card {
+      min-height: 460px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ministry-card img {
+      transition: none;
+    }
+  }
+</style>

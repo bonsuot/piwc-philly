@@ -1,0 +1,367 @@
+---
+const { section } = Astro.props;
+---
+
+<section class="prayer-section">
+  <div class="container prayer-grid">
+
+    <div class="prayer-copy">
+      {section?.eyebrow && (
+        <p class="eyebrow">{section.eyebrow}</p>
+      )}
+
+      {section?.heading && (
+        <h2>{section.heading}</h2>
+      )}
+
+      {section?.accentText && (
+        <p class="accent">{section.accentText}</p>
+      )}
+
+      {section?.description && (
+        <p class="description">{section.description}</p>
+      )}
+    </div>
+
+    <div class="form-wrap">
+      <form
+        class="prayer-form"
+        method="POST"
+        action="/api/prayer-request"
+        data-prayer-form
+      >
+        <div class="field-row">
+          <div class="field">
+            <label for="name">Name</label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              autocomplete="name"
+            />
+          </div>
+
+          <div class="field">
+            <label for="email">
+              Email
+              <span>Optional</span>
+            </label>
+
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="email"
+            />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="request">
+            Prayer Request
+          </label>
+
+          <textarea
+            id="request"
+            name="request"
+            rows="7"
+            required
+            maxlength="5000"
+          ></textarea>
+        </div>
+
+        <fieldset>
+          <legend>Prayer preferences</legend>
+
+          <label class="checkbox">
+            <input
+              type="checkbox"
+              name="contactRequested"
+              value="yes"
+            />
+
+            <span>
+              I would like someone from PIWC to contact me.
+            </span>
+          </label>
+
+          <label class="checkbox">
+            <input
+              type="checkbox"
+              name="shareWithPrayerTeam"
+              value="yes"
+              checked
+            />
+
+            <span>
+              You may share this request with the PIWC prayer team.
+            </span>
+          </label>
+        </fieldset>
+
+        <!-- Honeypot -->
+        <div class="honeypot" aria-hidden="true">
+          <label for="website">Website</label>
+          <input
+            id="website"
+            name="website"
+            type="text"
+            tabindex="-1"
+            autocomplete="off"
+          />
+        </div>
+
+        <button type="submit">
+          SUBMIT PRAYER REQUEST
+          <span aria-hidden="true">→</span>
+        </button>
+
+        <p
+          class="status"
+          aria-live="polite"
+          data-form-status
+        ></p>
+      </form>
+
+      <p class="privacy-note">
+        Please avoid including highly sensitive personal,
+        financial, medical, or confidential information.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  const form = document.querySelector(
+    "[data-prayer-form]"
+  );
+
+  const status = document.querySelector(
+    "[data-form-status]"
+  );
+
+  if (
+    form instanceof HTMLFormElement &&
+    status instanceof HTMLElement
+  ) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const button =
+        form.querySelector<HTMLButtonElement>(
+          'button[type="submit"]'
+        );
+
+      const formData = new FormData(form);
+
+      status.textContent = "";
+
+      if (button) {
+        button.disabled = true;
+        button.textContent = "SENDING...";
+      }
+
+      try {
+        const body = new URLSearchParams();
+
+      formData.forEach((value, key) => {
+        if (typeof value === "string") {
+          body.append(key, value);
+        }
+      });
+
+      const response = await fetch(form.action, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body,
+      });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result?.message ??
+            "Unable to submit the request."
+          );
+        }
+
+        form.reset();
+
+        status.textContent =
+          result?.message ??
+          "Thank you. Your prayer request has been received.";
+      } catch (error) {
+        status.textContent =
+          "We couldn't submit your request right now. Please try again.";
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.innerHTML =
+            'SUBMIT PRAYER REQUEST <span aria-hidden="true">→</span>';
+        }
+      }
+    });
+  }
+</script>
+
+<style>
+  .prayer-section {
+    padding-block: var(--section-space-lg);
+    background: var(--color-brand-ivory);
+  }
+
+  .prayer-grid {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: clamp(4rem, 8vw, 9rem);
+  }
+
+  .eyebrow {
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin-top: 1rem;
+    font-size: clamp(3rem, 6vw, 6rem);
+    text-transform: uppercase;
+  }
+
+  .accent {
+    margin-top: 0.5rem;
+    font-family: var(--font-editorial);
+    font-size: clamp(2rem, 4vw, 4rem);
+    font-style: italic;
+    line-height: 1;
+  }
+
+  .description {
+    max-width: 520px;
+    margin-top: 2rem;
+    color: var(--color-text-muted);
+  }
+
+  .prayer-form {
+    display: grid;
+    gap: 1.6rem;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .field {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  label,
+  legend {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  label span {
+    color: var(--color-text-muted);
+    font-size: 0.65rem;
+    font-weight: 500;
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    border: 1px solid var(--color-border);
+    background: var(--color-brand-white);
+    padding: 1rem;
+    color: var(--color-brand-charcoal);
+    outline: none;
+  }
+
+  input:focus,
+  textarea:focus {
+    border-color: var(--color-brand-navy);
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  fieldset {
+    display: grid;
+    gap: 0.9rem;
+    padding: 0;
+    border: 0;
+  }
+
+  legend {
+    margin-bottom: 0.4rem;
+  }
+
+  .checkbox {
+    display: flex;
+    gap: 0.8rem;
+    align-items: flex-start;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .checkbox input {
+    width: auto;
+    margin-top: 0.2rem;
+  }
+
+  button {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 1.5rem;
+    border: 0;
+    padding: 1rem 1.4rem;
+    background: var(--color-brand-gold);
+    color: var(--color-brand-navy);
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+
+  button:disabled {
+    cursor: wait;
+    opacity: 0.6;
+  }
+
+  .status {
+    min-height: 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  .privacy-note {
+    margin-top: 1.5rem;
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+  }
+
+  .honeypot {
+    position: absolute;
+    left: -9999px;
+  }
+
+  @media (max-width: 850px) {
+    .prayer-grid,
+    .field-row {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

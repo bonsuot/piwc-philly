@@ -1,0 +1,245 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import imageUrlBuilder from "@sanity/image-url";
+import { sanityClient } from "sanity:client";
+import groq from "groq";
+
+const builder = imageUrlBuilder(sanityClient);
+
+function imageUrl(image: any) {
+  if (!image?.asset) return "";
+
+  return builder
+    .image(image)
+    .width(1200)
+    .height(1500)
+    .fit("crop")
+    .auto("format")
+    .quality(88)
+    .url();
+}
+
+const ministriesQuery = groq`
+  *[_type == "ministry"] | order(name asc) {
+    _id,
+    name,
+    "slug": slug.current,
+    shortDescription,
+    audience,
+
+    image {
+      asset,
+      hotspot,
+      crop,
+      alt
+    }
+  }
+`;
+
+const ministries = await sanityClient.fetch(ministriesQuery);
+---
+
+<BaseLayout
+  title="Ministries | PIWC Philadelphia"
+  description="Find your community and discover ministries at PIWC Philadelphia."
+>
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">GET INVOLVED</p>
+
+        <h1>
+          FIND YOUR
+          <span>community.</span>
+        </h1>
+
+        <p class="intro">
+          Find a place to grow in faith, build meaningful relationships,
+          and use your gifts.
+        </p>
+      </div>
+    </section>
+
+    <section class="ministries-section">
+      <div class="container">
+        <div class="ministries-grid">
+          {
+            ministries.map((ministry: any) => (
+              <a
+                href={`/get-involved/ministries/${ministry.slug}`}
+                class="ministry-card"
+              >
+                <img
+                  src={imageUrl(ministry.image)}
+                  alt={ministry.image?.alt ?? ministry.name}
+                  loading="lazy"
+                />
+
+                <div class="overlay"></div>
+
+                <div class="content">
+                  {
+                    ministry.audience && (
+                      <p>
+                        {ministry.audience.replace("-", " ")}
+                      </p>
+                    )
+                  }
+
+                  <h2>{ministry.name}</h2>
+
+                  {
+                    ministry.shortDescription && (
+                      <div class="description">
+                        {ministry.shortDescription}
+                      </div>
+                    )
+                  }
+
+                  <span>EXPLORE →</span>
+                </div>
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .page-hero {
+    padding:
+      clamp(10rem, 17vw, 15rem)
+      0
+      var(--section-space-md);
+    background: var(--color-brand-navy);
+    color: var(--color-brand-white);
+  }
+
+  .eyebrow {
+    color: var(--color-brand-gold);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+  }
+
+  h1 {
+    max-width: 1000px;
+    margin-top: 1.5rem;
+    font-size: clamp(4rem, 10vw, 9rem);
+    text-transform: uppercase;
+  }
+
+  h1 span {
+    display: block;
+    font-family: var(--font-editorial);
+    font-weight: 400;
+    font-style: italic;
+    text-transform: none;
+  }
+
+  .intro {
+    max-width: 620px;
+    margin-top: 2rem;
+    color: rgb(255 255 255 / 70%);
+    font-size: 1.1rem;
+  }
+
+  .ministries-section {
+    padding-block: var(--section-space-lg);
+    background: var(--color-brand-ivory);
+  }
+
+  .ministries-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+
+  .ministry-card {
+    position: relative;
+    min-height: 650px;
+    overflow: hidden;
+    background: var(--color-brand-navy);
+    color: white;
+  }
+
+  .ministry-card img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 800ms ease;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        0deg,
+        rgb(3 14 28 / 88%) 0%,
+        rgb(3 14 28 / 15%) 70%
+      );
+  }
+
+  .content {
+    position: absolute;
+    z-index: 2;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: clamp(1.75rem, 4vw, 3rem);
+  }
+
+  .content > p {
+    color: var(--color-brand-gold);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .content h2 {
+    margin-top: 0.7rem;
+    font-size: clamp(2.5rem, 5vw, 5rem);
+    text-transform: uppercase;
+  }
+
+  .description {
+    max-width: 500px;
+    margin-top: 1rem;
+    color: rgb(255 255 255 / 72%);
+    line-height: 1.6;
+  }
+
+  .content span {
+    display: inline-block;
+    margin-top: 1.5rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+  }
+
+  .ministry-card:hover img {
+    transform: scale(1.035);
+  }
+
+  @media (max-width: 750px) {
+    .ministries-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .ministry-card {
+      min-height: 520px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ministry-card img {
+      transition: none;
+    }
+  }
+</style>

@@ -1,0 +1,166 @@
+---
+const { section } = Astro.props;
+
+const service = section?.service;
+const location = service?.location;
+
+const address = [
+  location?.street,
+  location?.city,
+  location?.state,
+  location?.zip,
+]
+  .filter(Boolean)
+  .join(", ");
+---
+
+<section class="service-section">
+  <div class="container service-grid">
+
+    <div>
+      {section?.eyebrow && (
+        <p class="eyebrow">{section.eyebrow}</p>
+      )}
+
+      <h2>{section?.heading}</h2>
+
+      {section?.accentText && (
+        <p class="accent">{section.accentText}</p>
+      )}
+
+      {section?.description && (
+        <p class="description">{section.description}</p>
+      )}
+    </div>
+
+    <div class="service-card">
+      <p class="label">{service?.name}</p>
+
+      <div class="time">
+        <span>{service?.day}</span>
+        <strong>{service?.startTime}</strong>
+      </div>
+
+      {location?.name && (
+        <div class="location">
+          <strong>{location.name}</strong>
+
+          {address && <p>{address}</p>}
+        </div>
+      )}
+
+      {
+        section?.showParking &&
+        location?.parkingInstructions && (
+          <div class="parking">
+            <span>PARKING</span>
+            <p>{location.parkingInstructions}</p>
+          </div>
+        )
+      }
+
+      {location?.mapsUrl && (
+        <a
+          href={location.mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          GET DIRECTIONS ↗
+        </a>
+      )}
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .service-section {
+    padding-block: var(--section-space-lg);
+    background: var(--color-brand-navy);
+    color: white;
+  }
+
+  .service-grid {
+    display: grid;
+    grid-template-columns: 1fr 0.8fr;
+    gap: clamp(4rem, 8vw, 9rem);
+  }
+
+  .eyebrow,
+  .label,
+  .parking span {
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin-top: 1rem;
+    font-size: clamp(3rem, 7vw, 7rem);
+    text-transform: uppercase;
+  }
+
+  .accent {
+    font-family: var(--font-editorial);
+    font-size: clamp(2rem, 4vw, 4.5rem);
+    font-style: italic;
+  }
+
+  .description {
+    max-width: 600px;
+    margin-top: 2rem;
+    color: rgb(255 255 255 / 65%);
+  }
+
+  .service-card {
+    border-top: 1px solid rgb(255 255 255 / 25%);
+    padding-top: 1.5rem;
+  }
+
+  .time {
+    display: grid;
+    gap: 0.25rem;
+    margin-top: 2rem;
+  }
+
+  .time span {
+    font-family: var(--font-editorial);
+    font-size: 1.6rem;
+    font-style: italic;
+  }
+
+  .time strong {
+    font-family: var(--font-display);
+    font-size: clamp(3.5rem, 7vw, 6rem);
+    line-height: 0.9;
+  }
+
+  .location,
+  .parking {
+    margin-top: 2rem;
+  }
+
+  .location p,
+  .parking p {
+    margin-top: 0.5rem;
+    color: rgb(255 255 255 / 62%);
+  }
+
+  .service-card > a {
+    display: inline-block;
+    margin-top: 2rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid currentColor;
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 800;
+  }
+
+  @media (max-width: 800px) {
+    .service-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

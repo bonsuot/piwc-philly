@@ -1,0 +1,287 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { sanityClient } from "sanity:client";
+import imageUrlBuilder from "@sanity/image-url";
+import groq from "groq";
+
+export async function getStaticPaths() {
+  const series = await sanityClient.fetch(
+    groq`
+      *[
+        _type == "sermonSeries" &&
+        defined(slug.current)
+      ] {
+        "slug": slug.current
+      }
+    `
+  );
+
+  return series.map((item: any) => ({
+    params: {
+      slug: item.slug,
+    },
+  }));
+}
+
+const { slug } = Astro.params;
+
+const series = await sanityClient.fetch(
+  groq`
+    *[
+      _type == "sermonSeries" &&
+      slug.current == $slug
+    ][0] {
+      _id,
+      title,
+      description,
+
+      image {
+        asset,
+        hotspot,
+        crop,
+        alt
+      },
+
+      "sermons": *[
+        _type == "sermon" &&
+        references(^._id)
+      ] | order(date desc) {
+        title,
+        "slug": slug.current,
+        date,
+        speakerName,
+        scripture,
+
+        thumbnail {
+          asset,
+          hotspot,
+          crop,
+          alt
+        }
+      }
+    }
+  `,
+  { slug }
+);
+
+if (!series) {
+  return Astro.redirect("/media");
+}
+
+const builder = imageUrlBuilder(sanityClient);
+
+function imageUrl(image: any, width = 1400, height = 900) {
+  if (!image?.asset) return "";
+
+  return builder
+    .image(image)
+    .width(width)
+    .height(height)
+    .fit("crop")
+    .auto("format")
+    .quality(88)
+    .url();
+}
+
+function formatDate(date: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(`${date}T12:00:00`));
+}
+---
+
+<BaseLayout
+  title={`${series.title} | PIWC Philadelphia`}
+  description={
+    series.description ??
+    `Explore the ${series.title} sermon series from PIWC Philadelphia.`
+  }
+>
+  <main>
+
+    <section class="series-hero">
+      {
+        series.image?.asset && (
+          <img
+            src={imageUrl(series.image, 2200, 1400)}
+            alt={series.image?.alt ?? series.title}
+          />
+        )
+      }
+
+      <div class="overlay"></div>
+
+      <div class="container hero-copy">
+        <p>SERMON SERIES</p>
+        <h1>{series.title}</h1>
+
+        {
+          series.description && (
+            <div class="description">
+              {series.description}
+            </div>
+          )
+        }
+      </div>
+    </section>
+
+    <section class="messages">
+      <div class="container">
+
+        <p class="eyebrow">
+          MESSAGES IN THIS SERIES
+        </p>
+
+        <div class="message-grid">
+          {
+            series.sermons?.map((sermon: any) => (
+              <a
+                href={`/media/sermons/${sermon.slug}`}
+                class="message-card"
+              >
+                {
+                  sermon.thumbnail?.asset && (
+                    <img
+                      src={imageUrl(sermon.thumbnail)}
+                      alt={
+                        sermon.thumbnail?.alt ??
+                        sermon.title
+                      }
+                      loading="lazy"
+                    />
+                  )
+                }
+
+                <div class="meta">
+                  <span>{formatDate(sermon.date)}</span>
+                  <span>{sermon.speakerName}</span>
+                </div>
+
+                <h2>{sermon.title}</h2>
+
+                {
+                  sermon.scripture && (
+                    <p>{sermon.scripture}</p>
+                  )
+                }
+              </a>
+            ))
+          }
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<style>
+  .series-hero {
+    position: relative;
+    display: flex;
+    min-height: 85svh;
+    align-items: flex-end;
+    overflow: hidden;
+    background: var(--color-brand-navy);
+    color: white;
+  }
+
+  .series-hero > img,
+  .series-hero .overlay {
+    position: absolute;
+    inset: 0;
+  }
+
+  .series-hero > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .series-hero .overlay {
+    background:
+      linear-gradient(
+        0deg,
+        rgb(3 14 28 / 88%) 0%,
+        rgb(3 14 28 / 15%) 70%
+      );
+  }
+
+  .hero-copy {
+    position: relative;
+    z-index: 2;
+    padding-bottom: clamp(4rem, 8vw, 7rem);
+  }
+
+  .hero-copy > p,
+  .eyebrow {
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+  }
+
+  .hero-copy h1 {
+    margin-top: 1rem;
+    max-width: 1100px;
+    font-size: clamp(4rem, 10vw, 9rem);
+    text-transform: uppercase;
+  }
+
+  .hero-copy .description {
+    max-width: 650px;
+    margin-top: 1.5rem;
+    color: rgb(255 255 255 / 70%);
+    font-size: 1.1rem;
+  }
+
+  .messages {
+    padding-block: var(--section-space-lg);
+    background: var(--color-brand-ivory);
+  }
+
+  .message-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(3rem, 6vw, 5rem) 1.5rem;
+    margin-top: 3rem;
+  }
+
+  .message-card img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+    color: var(--color-text-muted);
+    font-size: 0.67rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .message-card h2 {
+    margin-top: 0.7rem;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    text-transform: uppercase;
+  }
+
+  .message-card > p {
+    margin-top: 0.5rem;
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  @media (max-width: 700px) {
+    .message-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,74 @@
+---
+import PageHero from "./sections/PageHero.astro";
+import ImageTextSection from "./sections/ImageTextSection.astro";
+import CTASection from "./sections/CTASection.astro";
+import RichTextSection from "./sections/RichTextSection.astro";
+import FAQSection from "./sections/FAQSection.astro";
+import ServiceInfoSection from "./sections/ServiceInfoSection.astro";
+import LocationSection from "./sections/LocationSection.astro";
+import MinistryGridSection from "./sections/MinistryGridSection.astro";
+import EventGridSection from "./sections/EventGridSection.astro";
+import SermonGridSection from "./sections/SermonGridSection.astro";
+import ValuesSection from "./sections/ValuesSection.astro";
+import PrayerRequestSection from "./sections/PrayerRequestSection.astro";
+import PeopleGridSection from "./sections/PeopleGridSection.astro";
+import LivestreamSection from "./sections/LivestreamSection.astro";
+import SeriesGridSection from "./sections/SeriesGridSection.astro";
+
+const { sections = [] } = Astro.props;
+---
+
+{
+  sections.map((section: any) => {
+    switch (section._type) {
+      case "pageHero":
+        return <PageHero section={section} />;
+
+      case "imageTextSection":
+        return <ImageTextSection section={section} />;
+
+      case "richTextSection":
+        return <RichTextSection section={section} />;
+
+      case "serviceInfoSection":
+        return <ServiceInfoSection section={section} />;
+
+      case "locationSection":
+        return <LocationSection section={section} />;
+
+      case "faqSection":
+        return <FAQSection section={section} />;
+
+      case "ctaSection":
+        return <CTASection section={section} />;
+
+      case "ministryGridSection":
+        return <MinistryGridSection section={section} />;
+
+    case "eventGridSection":
+      return <EventGridSection section={section} />;
+
+    case "sermonGridSection":
+      return <SermonGridSection section={section} />;
+
+    case "valuesSection":
+      return <ValuesSection section={section} />;
+
+    case "prayerRequestSection":
+      return <PrayerRequestSection section={section} />;
+
+    case "peopleGridSection":
+      return <PeopleGridSection section={section} />;
+
+    case "livestreamSection":
+      return <LivestreamSection section={section} />;
+
+    case "seriesGridSection":
+      return <SeriesGridSection section={section} />;
+
+      default:
+        console.warn(`Unknown page section: ${section._type}`);
+        return null;
+    }
+  })
+}

@@ -1,0 +1,200 @@
+---
+interface Props {
+  section: any;
+}
+
+const { section } = Astro.props;
+
+function getHref(link: any) {
+  if (!link) return "#";
+
+  return link.linkType === "external"
+    ? link.externalUrl ?? "#"
+    : link.internalPath ?? "#";
+}
+
+const service = section?.service;
+const location = service?.location;
+
+const address = [
+  location?.street,
+  location?.city,
+  location?.state,
+  location?.zip,
+]
+  .filter(Boolean)
+  .join(", ");
+---
+
+<section class="sunday-section">
+  <div class="container sunday-grid">
+    <div class="sunday-copy">
+      {section?.eyebrow && (
+        <p class="eyebrow">{section.eyebrow}</p>
+      )}
+
+      {section?.heading && (
+        <h2>{section.heading}</h2>
+      )}
+
+      {section?.description && (
+        <p class="description">{section.description}</p>
+      )}
+
+      {section?.cta?.link && (
+        <a
+          href={getHref(section.cta.link)}
+          class="visit-link"
+        >
+          {section.cta.link.label}
+          <span aria-hidden="true">→</span>
+        </a>
+      )}
+    </div>
+
+    <div class="service-panel">
+      <p class="service-label">SUNDAY WORSHIP</p>
+
+      <div class="service-time">
+        <span>{service?.day}</span>
+        <strong>{service?.startTime}</strong>
+      </div>
+
+      {location?.name && (
+        <div class="service-location">
+          <span>{location.name}</span>
+          {address && <p>{address}</p>}
+        </div>
+      )}
+
+      {location?.mapsUrl && (
+        <a
+          href={location.mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="directions-link"
+        >
+          GET DIRECTIONS ↗
+        </a>
+      )}
+    </div>
+  </div>
+</section>
+
+<style>
+  .sunday-section {
+    background: var(--color-brand-navy);
+    color: var(--color-brand-white);
+    padding-block: var(--section-space-lg);
+  }
+
+  .sunday-grid {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1.1fr)
+      minmax(320px, 0.9fr);
+    gap: clamp(4rem, 8vw, 10rem);
+    align-items: end;
+  }
+
+  .eyebrow,
+  .service-label {
+    color: var(--color-brand-gold);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .sunday-copy h2 {
+    margin-top: 1.25rem;
+    max-width: 850px;
+    font-size: clamp(3rem, 7vw, 7rem);
+    line-height: 0.88;
+    text-transform: uppercase;
+  }
+
+  .description {
+    max-width: 620px;
+    margin-top: 2rem;
+    color: rgb(255 255 255 / 75%);
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
+  }
+
+  .visit-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 2rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid currentColor;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .visit-link span {
+    transition: transform var(--transition-fast);
+  }
+
+  .visit-link:hover span {
+    transform: translateX(5px);
+  }
+
+  .service-panel {
+    border-top: 1px solid rgb(255 255 255 / 22%);
+    padding-top: 1.5rem;
+  }
+
+  .service-time {
+    display: grid;
+    margin-top: 2rem;
+    gap: 0.4rem;
+  }
+
+  .service-time span {
+    font-family: var(--font-editorial);
+    font-size: clamp(1.5rem, 2vw, 2rem);
+    font-style: italic;
+  }
+
+  .service-time strong {
+    font-family: var(--font-display);
+    font-size: clamp(3.5rem, 7vw, 6.5rem);
+    line-height: 0.9;
+    letter-spacing: -0.05em;
+  }
+
+  .service-location {
+    margin-top: 2.5rem;
+  }
+
+  .service-location span {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .service-location p {
+    margin-top: 0.5rem;
+    color: rgb(255 255 255 / 65%);
+    font-size: 0.95rem;
+  }
+
+  .directions-link {
+    display: inline-block;
+    margin-top: 1.25rem;
+    color: var(--color-brand-gold);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+
+  @media (max-width: 900px) {
+    .sunday-grid {
+      grid-template-columns: 1fr;
+      gap: 4rem;
+    }
+  }
+</style>

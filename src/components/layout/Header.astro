@@ -1,0 +1,796 @@
+---
+import { sanityClient } from "sanity:client";
+import groq from "groq";
+import imageUrlBuilder from "@sanity/image-url";
+import { resolveLink } from "../../lib/links";
+
+const headerQuery = groq`
+{
+  "settings": *[_id == "siteSettings"][0] {
+    churchName,
+    shortName,
+    logo
+  },
+
+  "navigation": *[_id == "navigation"][0] {
+    mainItems[] {
+      link {
+        label,
+        linkType,
+        externalUrl,
+        openInNewTab,
+        internalPath,
+
+        internalReference-> {
+        _type,
+        title,
+        name,
+        "slug": slug.current,
+
+        parent-> {
+          "slug": slug.current,
+
+          parent-> {
+            "slug": slug.current
+          }
+        }
+      }
+      },
+
+      children[] {
+      label,
+      linkType,
+      externalUrl,
+      openInNewTab,
+      internalPath,
+
+      internalReference-> {
+        _type,
+        title,
+        name,
+        "slug": slug.current,
+
+        parent-> {
+          "slug": slug.current,
+
+          parent-> {
+            "slug": slug.current
+          }
+        }
+      }
+}
+    },
+
+    primaryCta {
+      style,
+      link {
+        label,
+        linkType,
+        externalUrl,
+        openInNewTab,
+        internalPath,
+
+        internalReference-> {
+  _type,
+  title,
+  name,
+  "slug": slug.current,
+
+  parent-> {
+    "slug": slug.current,
+
+    parent-> {
+      "slug": slug.current
+    }
+  }
+}
+      }
+    },
+
+    secondaryCta {
+      style,
+      link {
+        label,
+        linkType,
+        externalUrl,
+        openInNewTab,
+        internalPath,
+
+       internalReference-> {
+  _type,
+  title,
+  name,
+  "slug": slug.current,
+
+  parent-> {
+    "slug": slug.current,
+
+    parent-> {
+      "slug": slug.current
+    }
+  }
+}
+      }
+    }
+  }
+}
+`;
+
+const data = await sanityClient.fetch(headerQuery);
+
+const settings = data?.settings;
+const navigation = data?.navigation;
+
+const builder = imageUrlBuilder(sanityClient);
+
+const logoUrl = settings?.logo?.asset
+  ? builder.image(settings.logo).width(96).auto("format").quality(80).url()
+  : null;
+
+
+---
+
+<header class="site-header" data-header>
+  <div class="header-inner">
+
+    <!-- Brand -->
+    <a href="/" class="brand" aria-label="PIWC Philadelphia home">
+      {
+        logoUrl && (
+          <img
+            src={logoUrl}
+            alt={settings?.logo?.alt ?? "PIWC Philadelphia"}
+            class="brand-logo"
+          />
+        )
+      }
+
+      <span class="brand-wordmark">
+        <strong>{settings?.shortName ?? "PIWC"}</strong>
+        <span>Philadelphia</span>
+      </span>
+    </a>
+
+    <!-- Desktop navigation -->
+    <nav class="desktop-nav" aria-label="Main navigation">
+      <div class="nav-links">
+        {
+          navigation?.mainItems?.map((item: any) => (
+            <div class="nav-item">
+              <a 
+                href={resolveLink(item.link)}
+                  class="nav-link"
+                  target={
+                    item.link?.openInNewTab
+                      ? "_blank"
+                      : undefined
+                  }
+                  rel={
+                    item.link?.openInNewTab
+                      ? "noopener noreferrer"
+                      : undefined
+                  }
+                >
+                  <span>{item.link?.label}</span>
+
+                  {
+                    item.children?.length > 0 && (
+                      <span
+                        class="dropdown-chevron"
+                        aria-hidden="true"
+                      >
+                        ⌄
+                      </span>
+                    )
+                  }
+              </a>
+
+              {
+                item.children?.length > 0 && (
+                  <div class="dropdown">
+                    {item.children.map((child: any) => (
+                      <a
+                        href={resolveLink(child)}
+                        target={
+                          child.openInNewTab
+                            ? "_blank"
+                            : undefined
+                        }
+                        rel={
+                          child.openInNewTab
+                            ? "noopener noreferrer"
+                            : undefined
+                        }
+                      >
+                        {child.label}
+                      </a>
+                    ))}
+                  </div>
+                )
+              }
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="nav-actions">
+        {
+          navigation?.secondaryCta?.link && (
+            <a
+              href={resolveLink(navigation.secondaryCta.link)}
+              class="give-link"
+            >
+              {navigation.secondaryCta.link.label}
+            </a>
+          )
+        }
+
+        {
+          navigation?.primaryCta?.link && (
+            <a
+              href={resolveLink(navigation.primaryCta.link)}
+              class="visit-button"
+            >
+              {navigation.primaryCta.link.label}
+              <span aria-hidden="true">→</span>
+            </a>
+          )
+        }
+      </div>
+    </nav>
+
+    <!-- Mobile menu button -->
+    <button
+      class="menu-toggle"
+      type="button"
+      aria-label="Open navigation"
+      aria-expanded="false"
+      aria-controls="mobile-menu"
+      data-menu-toggle
+    >
+      <span></span>
+      <span></span>
+    </button>
+  </div>
+
+  <!-- Mobile navigation -->
+  <div
+    id="mobile-menu"
+    class="mobile-menu"
+    data-mobile-menu
+    aria-hidden="true"
+  >
+    <div class="mobile-menu-inner">
+      <nav aria-label="Mobile navigation">
+        {
+          navigation?.mainItems?.map((item: any) => (
+            <div class="mobile-nav-group">
+              <a
+                href={resolveLink(item.link)}
+                class="mobile-nav-link"
+              >
+                {item.link?.label}
+              </a>
+
+              {
+                item.children?.length > 0 && (
+                  <div class="mobile-children">
+                    {item.children.map((child: any) => (
+                      <a href={resolveLink(child)}>
+                        {child.label}
+                      </a>
+                    ))}
+                  </div>
+                )
+              }
+            </div>
+          ))
+        }
+      </nav>
+
+      <div class="mobile-actions">
+        {
+          navigation?.primaryCta?.link && (
+            <a
+              href={resolveLink(navigation.primaryCta.link)}
+              class="mobile-visit"
+            >
+              {navigation.primaryCta.link.label}
+              <span>→</span>
+            </a>
+          )
+        }
+
+        {
+          navigation?.secondaryCta?.link && (
+            <a
+              href={resolveLink(navigation.secondaryCta.link)}
+              class="mobile-give"
+            >
+              {navigation.secondaryCta.link.label}
+            </a>
+          )
+        }
+      </div>
+
+      <p class="mobile-tagline">
+        A Place of Love, Healing &amp; Provision.
+      </p>
+    </div>
+  </div>
+</header>
+
+<script>
+  const header = document.querySelector("[data-header]");
+  const toggle = document.querySelector("[data-menu-toggle]");
+  const menu = document.querySelector("[data-mobile-menu]");
+
+  if (
+    header instanceof HTMLElement &&
+    toggle instanceof HTMLButtonElement &&
+    menu instanceof HTMLElement
+  ) {
+    const closeMenu = () => {
+      header.classList.remove("menu-open");
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-label", "Open navigation");
+      menu.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("nav-open");
+    };
+
+    const openMenu = () => {
+      header.classList.add("menu-open");
+      toggle.setAttribute("aria-expanded", "true");
+      toggle.setAttribute("aria-label", "Close navigation");
+      menu.setAttribute("aria-hidden", "false");
+      document.body.classList.add("nav-open");
+    };
+
+    toggle.addEventListener("click", () => {
+      const isOpen = header.classList.contains("menu-open");
+
+      if (isOpen) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    });
+
+    menu.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", closeMenu);
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeMenu();
+      }
+    });
+  }
+</script>
+
+<style>
+  .site-header {
+    position: absolute;
+    z-index: 100;
+    top: 0;
+    left: 0;
+    width: 100%;
+    color: var(--color-brand-white);
+  }
+
+  .header-inner {
+    position: relative;
+    z-index: 102;
+    display: flex;
+    width: 100%;
+    height: 96px;
+    align-items: center;
+    justify-content: space-between;
+    padding-inline: var(--page-padding);
+  }
+
+  /* BRAND */
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .brand-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+  }
+
+  .brand-wordmark {
+    display: flex;
+    flex-direction: column;
+    text-transform: uppercase;
+    line-height: 0.9;
+  }
+
+  .brand-wordmark strong {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+
+  .brand-wordmark span {
+    margin-top: 0.3rem;
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+  }
+
+  /* DESKTOP */
+
+  .desktop-nav {
+    display: flex;
+    align-items: center;
+    gap: clamp(2rem, 4vw, 5rem);
+  }
+
+  .nav-links,
+  .nav-actions {
+    display: flex;
+    align-items: center;
+  }
+
+  .nav-links {
+    gap: clamp(1.25rem, 2vw, 2.5rem);
+  }
+
+  .nav-actions {
+    gap: 1.5rem;
+  }
+
+  .nav-item {
+    position: relative;
+  }
+
+  .nav-link,
+  .give-link {
+    position: relative;
+    padding-block: 1rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dropdown-chevron {
+  display: inline-block;
+  color: var(--color-brand-gold);
+  font-size: 0.8em;
+  line-height: 1;
+
+  transition: transform 180ms ease;
+}
+
+.nav-item:hover .dropdown-chevron,
+.nav-item:focus-within .dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+  .nav-link::after,
+  .give-link::after {
+    position: absolute;
+    bottom: 0.7rem;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: currentColor;
+    content: "";
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform var(--transition-base);
+  }
+
+  .nav-link:hover::after,
+  .give-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .visit-button {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 0.8rem 1.35rem;
+    background: var(--color-brand-gold);
+    color: var(--color-brand-navy);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    transition:
+      transform var(--transition-fast),
+      background var(--transition-fast);
+  }
+
+  .visit-button:hover {
+    transform: translateY(-2px);
+  }
+
+  .visit-button span {
+    font-size: 1rem;
+    transition: transform var(--transition-fast);
+  }
+
+  .visit-button:hover span {
+    transform: translateX(4px);
+  }
+
+  /* DROPDOWN */
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+
+  display: grid;
+  width: max-content;
+  min-width: 180px;
+
+  padding: 0.3rem;
+
+  background: var(--color-brand-navy);
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-top: 2px solid var(--color-brand-gold);
+  border-radius: 6px;
+
+  box-shadow:
+    0 16px 40px rgb(0 0 0 / 22%);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transform: translate(-50%, 8px);
+
+ transition:
+  opacity 180ms ease 250ms,
+  transform 180ms ease 250ms,
+  visibility 0s linear 250ms;
+
+  z-index: 100;
+}
+
+.dropdown a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 1.25rem;
+
+  padding: 0.55rem 0.7rem;
+
+  color: var(--color-brand-white);
+
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  text-transform: uppercase;
+
+  border-radius: 3px;
+
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.dropdown a::after {
+  content: "→";
+
+  color: var(--color-brand-gold);
+  opacity: 0;
+
+  transform: translateX(-4px);
+
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.dropdown a:hover,
+.dropdown a:focus-visible {
+  background: rgb(255 255 255 / 7%);
+  color: var(--color-brand-gold);
+}
+
+.dropdown a:hover::after,
+.dropdown a:focus-visible::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.nav-item:hover .dropdown,
+.nav-item:focus-within .dropdown {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+
+  transform: translate(-50%, 0);
+
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    visibility 0s;
+}
+
+
+
+
+
+
+  /* MOBILE BUTTON */
+
+  .menu-toggle {
+    position: relative;
+    z-index: 103;
+    display: none;
+    width: 42px;
+    height: 42px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .menu-toggle span {
+    position: absolute;
+    left: 7px;
+    width: 28px;
+    height: 1.5px;
+    background: currentColor;
+    transition:
+      transform var(--transition-base),
+      top var(--transition-base);
+  }
+
+  .menu-toggle span:first-child {
+    top: 16px;
+  }
+
+  .menu-toggle span:last-child {
+    top: 25px;
+  }
+
+  .menu-open .menu-toggle span:first-child {
+    top: 21px;
+    transform: rotate(45deg);
+  }
+
+  .menu-open .menu-toggle span:last-child {
+    top: 21px;
+    transform: rotate(-45deg);
+  }
+
+  /* MOBILE MENU */
+
+  .mobile-menu {
+    position: fixed;
+    z-index: 101;
+    inset: 0;
+    display: none;
+    overflow-y: auto;
+    background: var(--color-brand-navy);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity var(--transition-base),
+      visibility var(--transition-base);
+  }
+
+  .mobile-menu-inner {
+    display: flex;
+    min-height: 100%;
+    flex-direction: column;
+    padding:
+      9rem
+      var(--page-padding)
+      2.5rem;
+  }
+
+  .mobile-nav-group {
+    border-bottom: 1px solid rgb(255 255 255 / 14%);
+  }
+
+  .mobile-nav-link {
+    display: block;
+    padding-block: 1rem;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 9vw, 3.75rem);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .mobile-children {
+    display: grid;
+    gap: 0.75rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .mobile-children a {
+    color: rgb(255 255 255 / 70%);
+    font-size: 0.9rem;
+  }
+
+  .mobile-actions {
+    display: grid;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .mobile-visit {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.15rem 1.25rem;
+    background: var(--color-brand-gold);
+    color: var(--color-brand-navy);
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mobile-give {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mobile-tagline {
+    margin-top: auto;
+    padding-top: 4rem;
+    color: rgb(255 255 255 / 55%);
+    font-family: var(--font-editorial);
+    font-size: 1rem;
+    font-style: italic;
+  }
+
+  @media (max-width: 1000px) {
+    .header-inner {
+      height: 82px;
+    }
+
+    .desktop-nav {
+      display: none;
+    }
+
+    .menu-toggle,
+    .mobile-menu {
+      display: block;
+    }
+
+    .menu-open .mobile-menu {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+    }
+
+    .brand-wordmark strong {
+      font-size: 1.15rem;
+    }
+  }
+</style>

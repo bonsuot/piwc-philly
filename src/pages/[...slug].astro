@@ -1,0 +1,642 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageSections from "../components/PageSections.astro";
+import { sanityClient } from "sanity:client";
+import groq from "groq";
+import imageUrlBuilder from "@sanity/image-url";
+
+export async function getStaticPaths() {
+  const pages = await sanityClient.fetch(
+    groq`
+      *[
+        _type == "page" &&
+        defined(slug.current)
+      ] {
+        _id,
+        "slug": slug.current,
+
+        parent-> {
+          _id,
+          "slug": slug.current,
+
+          parent-> {
+            _id,
+            "slug": slug.current
+          }
+        }
+      }
+    `
+  );
+
+  return pages.map((page: any) => {
+    const segments: string[] = [];
+
+    if (page.parent?.parent?.slug) {
+      segments.push(page.parent.parent.slug);
+    }
+
+    if (page.parent?.slug) {
+      segments.push(page.parent.slug);
+    }
+
+    segments.push(page.slug);
+
+    return {
+      params: {
+        slug: segments.join("/"),
+      },
+    };
+  });
+}
+
+
+const { slug } = Astro.params as { slug?: string };
+
+const rawSlug = slug ?? "";
+
+const segments = rawSlug
+  .split("/")
+  .filter(Boolean);
+
+const currentSlug =
+  segments[segments.length - 1];
+
+const parentSlug =
+  segments.length >= 2
+    ? segments[segments.length - 2]
+    : null;
+
+const grandparentSlug =
+  segments.length >= 3
+    ? segments[segments.length - 3]
+    : null;
+
+const page = await sanityClient.fetch(
+  groq`
+    *[
+      _type == "page" &&
+      slug.current == $currentSlug &&
+
+      (
+        (
+          $parentSlug == null &&
+          !defined(parent)
+        )
+        ||
+        (
+          $parentSlug != null &&
+          parent->slug.current == $parentSlug
+        )
+      ) &&
+
+      (
+        $grandparentSlug == null
+        ||
+        parent->parent->slug.current == $grandparentSlug
+      )
+    ][0] {
+      title,
+      "slug": slug.current,
+
+      parent-> {
+        title,
+        "slug": slug.current,
+
+        parent-> {
+          title,
+          "slug": slug.current
+        }
+      },
+
+      seo {
+        metaTitle,
+        metaDescription,
+        noIndex,
+
+        shareImage {
+          asset,
+          hotspot,
+          crop,
+          alt
+        }
+      },
+
+      sections[] {
+        _type,
+        _key,
+        ...,
+
+        image {
+          asset,
+          hotspot,
+          crop,
+          alt,
+          caption
+        },
+
+        cta {
+          style,
+
+          link {
+            label,
+            linkType,
+            externalUrl,
+            openInNewTab,
+            internalPath,
+
+            internalReference-> {
+              _type,
+              title,
+              name,
+              "slug": slug.current,
+
+              parent-> {
+                "slug": slug.current,
+
+                parent-> {
+                  "slug": slug.current
+                }
+              }
+            }
+          }
+        },
+
+        _type == "serviceInfoSection" => {
+          service-> {
+            name,
+            day,
+            startTime,
+            endTime,
+            description,
+
+            location-> {
+              name,
+              street,
+              city,
+              state,
+              zip,
+              mapsUrl,
+              parkingInstructions,
+
+              image {
+                asset,
+                hotspot,
+                crop,
+                alt,
+                caption
+              }
+            }
+          }
+        },
+
+        _type == "locationSection" => {
+          location-> {
+            name,
+            street,
+            city,
+            state,
+            zip,
+            mapsUrl,
+            parkingInstructions,
+
+            image {
+              asset,
+              hotspot,
+              crop,
+              alt,
+              caption
+            }
+          }
+        },
+
+        _type == "ministryGridSection" => {
+          selectionMode,
+          limit,
+
+          ministries[]-> {
+            _id,
+            name,
+            "slug": slug.current,
+            audience,
+            shortDescription,
+
+            image {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          },
+
+          "featuredMinistries": *[
+            _type == "ministry" &&
+            featured == true
+          ] | order(name asc) {
+            _id,
+            name,
+            "slug": slug.current,
+            audience,
+            shortDescription,
+
+            image {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          },
+
+          "allMinistries": *[
+            _type == "ministry"
+          ] | order(name asc) {
+            _id,
+            name,
+            "slug": slug.current,
+            audience,
+            shortDescription,
+
+            image {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          }
+        },
+
+        _type == "eventGridSection" => {
+          selectionMode,
+          limit,
+
+          events[]-> {
+            _id,
+            title,
+            "slug": slug.current,
+            startDate,
+            startTime,
+            shortDescription,
+            customLocation,
+
+            location-> {
+              name
+            },
+
+            image {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          },
+
+          "upcomingEvents": *[
+            _type == "event" &&
+            startDate >= string::split(now(), "T")[0]
+          ] | order(startDate asc) {
+            _id,
+            title,
+            "slug": slug.current,
+            startDate,
+            startTime,
+            shortDescription,
+            customLocation,
+
+            location-> {
+              name
+            },
+
+            image {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          },
+
+          "featuredEvents": *[
+            _type == "event" &&
+            featured == true &&
+            startDate >= string::split(now(), "T")[0]
+          ] | order(startDate asc) {
+            _id,
+            title,
+            "slug": slug.current,
+            startDate,
+            startTime,
+            shortDescription,
+            customLocation,
+
+            location-> {
+              name
+            },
+
+            image {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          }
+        },
+
+        _type == "sermonGridSection" => {
+          selectionMode,
+          limit,
+
+          sermons[]-> {
+            _id,
+            title,
+            "slug": slug.current,
+            date,
+            speakerName,
+            scripture,
+
+            series-> {
+              title
+            },
+
+            thumbnail {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          },
+
+          "latestSermons": *[
+            _type == "sermon"
+          ] | order(date desc) {
+            _id,
+            title,
+            "slug": slug.current,
+            date,
+            speakerName,
+            scripture,
+
+            series-> {
+              title
+            },
+
+            thumbnail {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          },
+
+          "featuredSermons": *[
+            _type == "sermon" &&
+            featured == true
+          ] | order(date desc) {
+            _id,
+            title,
+            "slug": slug.current,
+            date,
+            speakerName,
+            scripture,
+
+            series-> {
+              title
+            },
+
+            thumbnail {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          }
+        },
+
+        _type == "valuesSection" => {
+          selectionMode,
+          theme,
+
+          values[]-> {
+            _id,
+            title,
+            shortStatement,
+            description,
+            scripture,
+            order,
+
+            image {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          },
+
+          "featuredValues": *[
+            _type == "value" &&
+            featured == true
+          ] | order(order asc) {
+            _id,
+            title,
+            shortStatement,
+            description,
+            scripture,
+            order,
+
+            image {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          },
+
+          "allValues": *[
+            _type == "value"
+          ] | order(order asc) {
+            _id,
+            title,
+            shortStatement,
+            description,
+            scripture,
+            order,
+
+            image {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          }
+        },
+
+        _type == "peopleGridSection" => {
+          selectionMode,
+          category,
+
+          people[]-> {
+            _id,
+            name,
+            role,
+            category,
+            shortBio,
+            email,
+            order,
+
+            photo {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          },
+
+          "featuredPeople": *[
+            _type == "person" &&
+            featured == true
+          ] | order(order asc) {
+            _id,
+            name,
+            role,
+            category,
+            shortBio,
+            email,
+            order,
+
+            photo {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          },
+
+          "allPeople": *[
+            _type == "person"
+          ] | order(order asc) {
+            _id,
+            name,
+            role,
+            category,
+            shortBio,
+            email,
+            order,
+
+            photo {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          }
+        },
+
+        _type == "livestreamSection" => {
+          "siteMedia": *[_type == "siteSettings"][0] {
+            liveStreamUrl,
+            youtubeChannelUrl,
+
+            liveStreamImage {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          }
+        },
+
+        _type == "seriesGridSection" => {
+          selectionMode,
+          limit,
+
+          series[]-> {
+            _id,
+            title,
+            "slug": slug.current,
+            description,
+
+            image {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          },
+
+        "featuredSeries": *[
+          _type == "sermonSeries" &&
+          featured == true
+        ] | order(_createdAt desc) {
+          _id,
+          title,
+          "slug": slug.current,
+          description,
+
+          image {
+            asset,
+            hotspot,
+            crop,
+            alt
+          }
+        },
+
+      "allSeries": *[
+        _type == "sermonSeries"
+      ] | order(_createdAt desc) {
+        _id,
+        title,
+        "slug": slug.current,
+        description,
+
+        image {
+          asset,
+          hotspot,
+          crop,
+          alt
+            }
+          }
+        }
+
+
+
+      }
+    }
+  `,
+  {
+    currentSlug,
+    parentSlug,
+    grandparentSlug,
+  }
+);
+
+if (!page) {
+  return Astro.redirect("/");
+}
+
+const builder = imageUrlBuilder(sanityClient);
+
+const seoImage = page?.seo?.shareImage?.asset
+  ? builder
+      .image(page.seo.shareImage)
+      .width(1200)
+      .height(630)
+      .fit("crop")
+      .auto("format")
+      .quality(90)
+      .url()
+  : undefined;
+---
+
+<BaseLayout
+  title={
+    page?.seo?.metaTitle ??
+    `${page.title} | PIWC Philadelphia`
+  }
+  description={
+    page?.seo?.metaDescription ??
+    `Learn more about ${page.title} at PIWC Philadelphia.`
+  }
+  image={seoImage}
+  noIndex={page?.seo?.noIndex ?? false}
+>
+  <main>
+    <PageSections sections={page.sections} />
+  </main>
+</BaseLayout>

@@ -1,0 +1,239 @@
+---
+import imageUrlBuilder from "@sanity/image-url";
+import { resolveLink } from "../../lib/links";
+import { sanityClient } from "sanity:client";
+
+interface Props {
+  section: any;
+}
+
+const { section } = Astro.props;
+
+const builder = imageUrlBuilder(sanityClient);
+
+function imageUrl(image: any) {
+  if (!image?.asset) return "";
+
+  return builder
+    .image(image)
+    .width(1600)
+    .height(1800)
+    .fit("crop")
+    .auto("format")
+    .quality(88)
+    .url();
+}
+
+function getHref(link: any) {
+  if (!link) return "#";
+
+  return link.linkType === "external"
+    ? link.externalUrl ?? "#"
+    : link.internalPath ?? "#";
+}
+
+const isImageLeft = section?.imagePosition === "left";
+const isDark = section?.theme === "dark";
+---
+
+<section
+  class:list={[
+    "image-text",
+    { "image-left": isImageLeft },
+    { dark: isDark },
+  ]}
+>
+  <div class="container image-text-grid">
+
+    <div class="image-text-copy">
+      {
+        section?.eyebrow && (
+          <p class="eyebrow">
+            {section.eyebrow}
+          </p>
+        )
+      }
+
+      <div class="heading-wrap">
+        {
+          section?.heading && (
+            <h2>
+              {section.heading}
+            </h2>
+          )
+        }
+
+        {
+          section?.accentText && (
+            <p class="accent">
+              {section.accentText}
+            </p>
+          )
+        }
+      </div>
+
+      {
+        section?.body && (
+          <p class="body-copy">
+            {section.body}
+          </p>
+        )
+      }
+
+      {
+        section?.cta?.link && (
+          <a
+           href={resolveLink(section.cta.link)}
+            class="section-link"
+          >
+            {section.cta.link.label}
+
+            <span aria-hidden="true">→</span>
+          </a>
+        )
+      }
+    </div>
+
+    {
+      section?.image?.asset && (
+        <figure class="image-frame">
+          <img
+            src={imageUrl(section.image)}
+            alt={section.image.alt ?? ""}
+            loading="lazy"
+            decoding="async"
+          />
+
+          {
+            section.image.caption && (
+              <figcaption>
+                {section.image.caption}
+              </figcaption>
+            )
+          }
+        </figure>
+      )
+    }
+
+  </div>
+</section>
+
+<style>
+  .image-text {
+    padding-block: var(--section-space-lg);
+    background: var(--color-brand-ivory);
+    color: var(--color-brand-charcoal);
+  }
+
+  .image-text.dark {
+    background: var(--color-brand-navy);
+    color: var(--color-brand-white);
+  }
+
+  .image-text-grid {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 0.9fr)
+      minmax(0, 1.1fr);
+    align-items: center;
+    gap: clamp(3rem, 8vw, 9rem);
+  }
+
+  .image-left .image-text-copy {
+    order: 2;
+  }
+
+  .image-left .image-frame {
+    order: 1;
+  }
+
+  .eyebrow {
+    margin-bottom: 1.5rem;
+    color: var(--color-brand-gold);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .heading-wrap h2 {
+    max-width: 700px;
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 6.5vw, 7rem);
+    font-weight: 800;
+    line-height: 0.86;
+    letter-spacing: -0.055em;
+    text-transform: uppercase;
+  }
+
+  .accent {
+    margin-top: 0.35rem;
+    font-family: var(--font-editorial);
+    font-size: clamp(2.8rem, 5.5vw, 6rem);
+    font-style: italic;
+    line-height: 0.9;
+  }
+
+  .body-copy {
+    max-width: 590px;
+    margin-top: 2rem;
+    color: color-mix(in srgb, currentColor 78%, transparent);
+    font-size: clamp(1rem, 1.4vw, 1.2rem);
+  }
+
+  .section-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-top: 2rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid currentColor;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .section-link span {
+    transition: transform var(--transition-fast);
+  }
+
+  .section-link:hover span {
+    transform: translateX(5px);
+  }
+
+  .image-frame {
+    position: relative;
+    margin: 0;
+  }
+
+  .image-frame img {
+    width: 100%;
+    min-height: 620px;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
+
+  .image-frame figcaption {
+    margin-top: 0.7rem;
+    color: color-mix(in srgb, currentColor 55%, transparent);
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 900px) {
+    .image-text-grid {
+      grid-template-columns: 1fr;
+      gap: 3.5rem;
+    }
+
+    .image-left .image-text-copy,
+    .image-left .image-frame {
+      order: initial;
+    }
+
+    .image-frame img {
+      min-height: unset;
+      aspect-ratio: 4 / 5;
+    }
+  }
+</style>

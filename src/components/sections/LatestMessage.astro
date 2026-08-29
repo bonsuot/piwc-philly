@@ -1,0 +1,290 @@
+---
+import imageUrlBuilder from "@sanity/image-url";
+import { sanityClient } from "sanity:client";
+import { resolveLink } from "../../lib/links";
+
+interface Props {
+  section: any;
+  sermon: any;
+}
+
+const { section, sermon } = Astro.props;
+
+const builder = imageUrlBuilder(sanityClient);
+
+function imageUrl(image: any) {
+  if (!image?.asset) return "";
+
+  return builder
+    .image(image)
+    .width(1800)
+    .height(1100)
+    .fit("crop")
+    .auto("format")
+    .quality(90)
+    .url();
+}
+
+function getHref(link: any) {
+  if (!link) return "#";
+
+  return link.linkType === "external"
+    ? link.externalUrl ?? "#"
+    : link.internalPath ?? "#";
+}
+
+const formattedDate = sermon?.date
+  ? new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date(`${sermon.date}T12:00:00`))
+  : "";
+---
+
+<section class="latest-message">
+  <div class="container">
+
+    <div class="section-heading">
+      <div>
+        {section?.eyebrow && (
+          <p class="eyebrow">{section.eyebrow}</p>
+        )}
+
+        {section?.heading && (
+          <h2>{section.heading}</h2>
+        )}
+      </div>
+
+      <div class="section-side">
+        {section?.description && (
+          <p>{section.description}</p>
+        )}
+
+        {section?.cta?.link && (
+          <a href={resolveLink(section.cta.link)}>
+            {section.cta.link.label}
+            <span>→</span>
+          </a>
+        )}
+      </div>
+    </div>
+
+    {sermon && (
+      <article class="sermon-feature">
+        <a
+          href={`/media/sermons/${sermon.slug}`}
+          class="sermon-image"
+        >
+          <img
+            src={imageUrl(sermon.thumbnail)}
+            alt={sermon.thumbnail?.alt ?? sermon.title}
+            loading="lazy"
+          />
+
+          <div class="image-overlay"></div>
+
+          <div class="play-button" aria-hidden="true">
+            <span>▶</span>
+          </div>
+        </a>
+
+        <div class="sermon-info">
+          <div class="meta">
+            {sermon.series?.title && (
+              <span>{sermon.series.title}</span>
+            )}
+
+            {formattedDate && (
+              <span>{formattedDate}</span>
+            )}
+          </div>
+
+          <h3>{sermon.title}</h3>
+
+          <p class="speaker">
+            {sermon.speakerName}
+          </p>
+
+          {sermon.scripture && (
+            <p class="scripture">
+              {sermon.scripture}
+            </p>
+          )}
+
+          {sermon.shortDescription && (
+            <p class="description">
+              {sermon.shortDescription}
+            </p>
+          )}
+
+          <a
+            href={`/media/sermons/${sermon.slug}`}
+            class="watch-link"
+          >
+            WATCH MESSAGE
+            <span>→</span>
+          </a>
+        </div>
+      </article>
+    )}
+
+  </div>
+</section>
+
+<style>
+  .latest-message {
+    padding-block: var(--section-space-lg);
+    background: var(--color-brand-white);
+  }
+
+  .section-heading {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: clamp(3rem, 8vw, 9rem);
+    align-items: end;
+    margin-bottom: clamp(3rem, 6vw, 6rem);
+  }
+
+  .eyebrow {
+    color: var(--color-brand-gold);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .section-heading h2 {
+    max-width: 900px;
+    margin-top: 1rem;
+    font-size: clamp(3rem, 7vw, 7rem);
+    text-transform: uppercase;
+  }
+
+  .section-side p {
+    color: var(--color-text-muted);
+    font-size: 1.05rem;
+  }
+
+  .section-side a,
+  .watch-link {
+    display: inline-flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid currentColor;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .sermon-feature {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+    gap: clamp(3rem, 6vw, 6rem);
+    align-items: center;
+  }
+
+  .sermon-image {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    background: var(--color-brand-navy);
+  }
+
+  .sermon-image img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    transition: transform 700ms ease;
+  }
+
+  .image-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgb(3 14 28 / 12%);
+  }
+
+  .play-button {
+    position: absolute;
+    right: 2rem;
+    bottom: 2rem;
+    display: grid;
+    width: 72px;
+    height: 72px;
+    place-items: center;
+    background: var(--color-brand-gold);
+    color: var(--color-brand-navy);
+    border-radius: 999px;
+  }
+
+  .sermon-image:hover img {
+    transform: scale(1.03);
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem 1.5rem;
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .sermon-info h3 {
+    margin-top: 1rem;
+    font-size: clamp(2.8rem, 5vw, 5.5rem);
+    text-transform: uppercase;
+  }
+
+  .speaker {
+    margin-top: 1rem;
+    font-family: var(--font-editorial);
+    font-size: 1.5rem;
+    font-style: italic;
+  }
+
+  .scripture {
+    margin-top: 0.75rem;
+    color: var(--color-brand-gold);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .sermon-info .description {
+    max-width: 520px;
+    margin-top: 1.5rem;
+    color: var(--color-text-muted);
+  }
+
+  @media (max-width: 900px) {
+    .section-heading,
+    .sermon-feature {
+      grid-template-columns: 1fr;
+    }
+
+    .section-heading {
+      gap: 2rem;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .play-button {
+      right: 1rem;
+      bottom: 1rem;
+      width: 58px;
+      height: 58px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sermon-image img {
+      transition: none;
+    }
+  }
+</style>

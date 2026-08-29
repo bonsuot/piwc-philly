@@ -1,0 +1,241 @@
+---
+import imageUrlBuilder from "@sanity/image-url";
+import { sanityClient } from "sanity:client";
+import { resolveLink } from "../../lib/links";
+
+const { section } = Astro.props;
+
+const builder = imageUrlBuilder(sanityClient);
+
+function imageUrl(image: any) {
+  if (!image?.asset) return "";
+
+  return builder
+    .image(image)
+    .width(1200)
+    .height(1500)
+    .fit("crop")
+    .auto("format")
+    .quality(88)
+    .url();
+}
+
+function getHref(link: any) {
+  if (!link) return "#";
+
+  return link.linkType === "external"
+    ? link.externalUrl ?? "#"
+    : link.internalPath ?? "#";
+}
+
+function formatDate(date: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(`${date}T12:00:00`));
+}
+
+let events = [];
+
+switch (section?.selectionMode) {
+  case "manual":
+    events = section?.events ?? [];
+    break;
+
+  case "featured":
+    events = section?.featuredEvents ?? [];
+    break;
+
+  default:
+    events = section?.upcomingEvents ?? [];
+}
+
+if (section?.selectionMode !== "manual") {
+  events = events.slice(0, section?.limit ?? 3);
+}
+---
+
+<section class="event-section">
+  <div class="container">
+
+    <div class="heading">
+      <div>
+        {section?.eyebrow && <p class="eyebrow">{section.eyebrow}</p>}
+        {section?.heading && <h2>{section.heading}</h2>}
+        {section?.accentText && <p class="accent">{section.accentText}</p>}
+      </div>
+
+      <div>
+        {section?.description && <p class="description">{section.description}</p>}
+
+        {section?.cta?.link && (
+          <a class="section-link" href={resolveLink(section.cta.link)}>
+            {section.cta.link.label} →
+          </a>
+        )}
+      </div>
+    </div>
+
+    <div class="grid">
+      {events.map((event: any) => (
+        <a class="card" href={`/events/${event.slug}`}>
+          <div class="image">
+            <img
+              src={imageUrl(event.image)}
+              alt={event.image?.alt ?? event.title}
+              loading="lazy"
+            />
+
+            <span class="date">
+              {formatDate(event.startDate)}
+            </span>
+          </div>
+
+          <div class="meta">
+            {event.startTime && <span>{event.startTime}</span>}
+
+            {(event.customLocation || event.location?.name) && (
+              <span>{event.customLocation ?? event.location?.name}</span>
+            )}
+          </div>
+
+          <h3>{event.title}</h3>
+
+          {event.shortDescription && (
+            <p class="description">{event.shortDescription}</p>
+          )}
+
+          <span class="more">EVENT DETAILS →</span>
+        </a>
+      ))}
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .event-section {
+    padding-block: var(--section-space-lg);
+    background: var(--color-brand-navy);
+    color: white;
+  }
+
+  .heading {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: clamp(3rem, 8vw, 9rem);
+    align-items: end;
+    margin-bottom: clamp(3rem, 6vw, 6rem);
+  }
+
+  .eyebrow {
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin-top: 1rem;
+    font-size: clamp(3rem, 7vw, 7rem);
+    text-transform: uppercase;
+  }
+
+  .accent {
+    font-family: var(--font-editorial);
+    font-size: clamp(2rem, 4vw, 4rem);
+    font-style: italic;
+  }
+
+  .heading .description {
+    color: rgb(255 255 255 / 65%);
+  }
+
+  .section-link {
+    display: inline-block;
+    margin-top: 1.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid currentColor;
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .image {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .image img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    transition: transform 700ms ease;
+  }
+
+  .card:hover img {
+    transform: scale(1.035);
+  }
+
+  .date {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.7rem 0.8rem;
+    background: var(--color-brand-gold);
+    color: var(--color-brand-navy);
+    font-size: 0.68rem;
+    font-weight: 800;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin-top: 1.2rem;
+    color: rgb(255 255 255 / 55%);
+    font-size: 0.67rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .card h3 {
+    margin-top: 0.7rem;
+    font-size: clamp(2rem, 3vw, 3.3rem);
+    text-transform: uppercase;
+  }
+
+  .card > .description {
+    margin-top: 0.8rem;
+    color: rgb(255 255 255 / 65%);
+  }
+
+  .more {
+    display: inline-block;
+    margin-top: 1rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+  }
+
+  @media (max-width: 900px) {
+    .heading {
+      grid-template-columns: 1fr;
+    }
+
+    .grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

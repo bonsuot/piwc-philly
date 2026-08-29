@@ -1,0 +1,611 @@
+---
+import imageUrlBuilder from "@sanity/image-url";
+import { sanityClient } from "sanity:client";
+import { resolveLink } from "../../lib/links";
+
+interface Props {
+  eyebrow?: string;
+  heading?: string;
+  description?: string;
+  slides?: any[];
+  primaryCta?: any;
+  secondaryCta?: any;
+}
+
+const {
+  eyebrow,
+  heading,
+  description,
+  slides = [],
+  primaryCta,
+  secondaryCta,
+} = Astro.props;
+
+const builder = imageUrlBuilder(sanityClient);
+
+function imageUrl(image: any, width: number) {
+  if (!image?.asset) return "";
+
+  return builder
+    .image(image)
+    .width(width)
+    .height(1080)
+    .fit("crop")
+    .auto("format")
+    .quality(78)
+    .url();
+}
+
+
+---
+
+<section
+  class="hero"
+  data-hero
+  aria-label="Welcome to PIWC Philadelphia"
+>
+  <!-- Photography -->
+  <div class="hero-media" aria-hidden="true">
+    {
+      slides.map((slide, index) => (
+        <div
+          class:list={[
+            "hero-slide",
+            { active: index === 0 },
+          ]}
+          data-hero-slide
+        >
+          <img
+            src={imageUrl(slide.image, 1280)}
+            srcset={`
+              ${imageUrl(slide.image, 480)} 480w,
+              ${imageUrl(slide.image, 640)} 640w,
+              ${imageUrl(slide.image, 768)} 768w,
+              ${imageUrl(slide.image, 1024)} 1024w,
+              ${imageUrl(slide.image, 1280)} 1280w,
+              ${imageUrl(slide.image, 1920)} 1920w
+            `}
+            sizes="100vw"
+            alt={slide.image?.alt ?? ""}
+            loading={index === 0 ? "eager" : "lazy"}
+            fetchpriority={index === 0 ? "high" : "low"}
+            decoding="async"
+          />
+        </div>
+      ))
+    }
+
+    <div class="hero-overlay"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="hero-content container">
+    <div class="hero-copy">
+      {
+        eyebrow && (
+          <p class="hero-eyebrow">
+            {eyebrow}
+          </p>
+        )
+      }
+
+      {
+        heading && (
+          <h1 class="hero-heading">
+            {heading}
+          </h1>
+        )
+      }
+
+      {
+        description && (
+          <p class="hero-description">
+            {description}
+          </p>
+        )
+      }
+
+      <div class="hero-actions">
+        {
+          primaryCta?.link && (
+            <a
+              href={resolveLink(primaryCta.link)}
+              class="hero-primary"
+            >
+              {primaryCta.link.label}
+
+              <span aria-hidden="true">
+                →
+              </span>
+            </a>
+          )
+        }
+
+        {
+          secondaryCta?.link && (
+            <a
+              href={resolveLink(secondaryCta.link)}
+              class="hero-secondary"
+              target={
+                secondaryCta.link.openInNewTab
+                  ? "_blank"
+                  : undefined
+              }
+              rel={
+                secondaryCta.link.openInNewTab
+                  ? "noopener noreferrer"
+                  : undefined
+              }
+            >
+              {secondaryCta.link.label}
+            </a>
+          )
+        }
+      </div>
+    </div>
+
+    <!-- Carousel navigation -->
+    {
+      slides.length > 1 && (
+        <div
+          class="hero-navigation"
+          aria-label="Hero photography"
+        >
+          <div class="hero-count">
+            <span data-current-slide>01</span>
+
+            <span class="count-divider">
+              /
+            </span>
+
+            <span>
+              {String(slides.length).padStart(2, "0")}
+            </span>
+          </div>
+
+          <div class="hero-progress">
+            {slides.map((_, index) => (
+              <button
+                type="button"
+                class:list={[
+                  "progress-item",
+                  { active: index === 0 },
+                ]}
+                aria-label={`Show photo ${index + 1}`}
+                data-hero-control={index}
+              >
+                <span></span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )
+    }
+  </div>
+
+  <div class="scroll-cue" aria-hidden="true">
+    <span>SCROLL</span>
+    <div></div>
+  </div>
+</section>
+
+<script>
+  function initializeHero() {
+    const hero = document.querySelector("[data-hero]");
+
+    if (!(hero instanceof HTMLElement)) return;
+
+    const slides = Array.from(
+      hero.querySelectorAll("[data-hero-slide]")
+    );
+
+    const controls = Array.from(
+      hero.querySelectorAll("[data-hero-control]")
+    );
+
+    const currentDisplay =
+      hero.querySelector("[data-current-slide]");
+
+    if (slides.length <= 1) return;
+
+    let currentIndex = 0;
+    let timer: number | undefined;
+
+    const reducedMotion =
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
+
+    const showSlide = (index: number) => {
+      slides.forEach((slide, slideIndex) => {
+        slide.classList.toggle(
+          "active",
+          slideIndex === index
+        );
+      });
+
+      controls.forEach((control, controlIndex) => {
+        control.classList.toggle(
+          "active",
+          controlIndex === index
+        );
+      });
+
+      if (currentDisplay) {
+        currentDisplay.textContent =
+          String(index + 1).padStart(2, "0");
+      }
+
+      currentIndex = index;
+    };
+
+    const nextSlide = () => {
+      const next =
+        (currentIndex + 1) % slides.length;
+
+      showSlide(next);
+    };
+
+    const stopTimer = () => {
+      if (timer) {
+        window.clearInterval(timer);
+      }
+    };
+
+    const startTimer = () => {
+      if (reducedMotion) return;
+
+      stopTimer();
+
+      timer = window.setInterval(
+        nextSlide,
+        5500
+      );
+    };
+
+    controls.forEach((control, index) => {
+      control.addEventListener("click", () => {
+        showSlide(index);
+        startTimer();
+      });
+    });
+
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (document.hidden) {
+          stopTimer();
+        } else {
+          startTimer();
+        }
+      }
+    );
+
+    startTimer();
+  }
+
+  initializeHero();
+
+  document.addEventListener(
+    "astro:page-load",
+    initializeHero
+  );
+</script>
+
+<style>
+  .hero {
+    position: relative;
+    display: flex;
+    min-height: 100svh;
+    align-items: flex-end;
+    overflow: hidden;
+    background: var(--color-brand-navy);
+    color: var(--color-brand-white);
+  }
+
+  .hero-media,
+  .hero-slide,
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+  }
+
+  .hero-slide {
+    opacity: 0;
+    transition: opacity 1.4s ease;
+  }
+
+  .hero-slide.active {
+    opacity: 1;
+  }
+
+  .hero-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.025);
+    transition:
+      transform 8s ease,
+      opacity 1.4s ease;
+  }
+
+  .hero-slide.active img {
+    transform: scale(1);
+  }
+
+  .hero-overlay {
+    background:
+      linear-gradient(
+        90deg,
+        rgb(3 14 28 / 78%) 0%,
+        rgb(3 14 28 / 45%) 48%,
+        rgb(3 14 28 / 15%) 75%
+      ),
+      linear-gradient(
+        0deg,
+        rgb(3 14 28 / 55%) 0%,
+        transparent 45%
+      );
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    width: 100%;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 4rem;
+    padding-bottom: clamp(5rem, 10vh, 8rem);
+  }
+
+  .hero-copy {
+    max-width: 850px;
+  }
+
+  .hero-eyebrow {
+    margin-bottom: 1.25rem;
+    color: var(--color-brand-gold);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .hero-heading {
+    max-width: 900px;
+    font-size: clamp(3.75rem, 8vw, 8.25rem);
+    font-weight: 800;
+    line-height: 0.84;
+    letter-spacing: -0.055em;
+    text-transform: uppercase;
+  }
+
+  .hero-description {
+    max-width: 550px;
+    margin-top: 1.75rem;
+    font-family: var(--font-editorial);
+    font-size: clamp(1.2rem, 2vw, 1.65rem);
+    font-style: italic;
+    line-height: 1.3;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.75rem;
+    margin-top: 2rem;
+  }
+
+  .hero-primary {
+    display: inline-flex;
+    min-height: 54px;
+    align-items: center;
+    gap: 2rem;
+    padding: 0.9rem 1.4rem;
+    background: var(--color-brand-gold);
+    color: var(--color-brand-navy);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: transform var(--transition-fast);
+  }
+
+  .hero-primary:hover {
+    transform: translateY(-2px);
+  }
+
+  .hero-primary span {
+    transition: transform var(--transition-fast);
+  }
+
+  .hero-primary:hover span {
+    transform: translateX(5px);
+  }
+
+  .hero-secondary {
+    position: relative;
+    padding-block: 0.5rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .hero-secondary::after {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 1px;
+    background: currentColor;
+    content: "";
+  }
+
+  /* NAVIGATION */
+
+  .hero-navigation {
+    width: min(300px, 28vw);
+    flex-shrink: 0;
+  }
+
+  .hero-count {
+    display: flex;
+    gap: 0.4rem;
+    justify-content: flex-end;
+    margin-bottom: 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .count-divider {
+    opacity: 0.5;
+  }
+
+  .hero-progress {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .progress-item {
+    position: relative;
+    height: 20px;
+    flex: 1;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .progress-item::before {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    height: 2px;
+    background: rgb(255 255 255 / 35%);
+    content: "";
+    transform: translateY(-50%);
+  }
+
+  .progress-item span {
+    position: absolute;
+    top: calc(50% - 1px);
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--color-brand-gold);
+    transform: translateY(-50%);
+  }
+
+  .progress-item.active span {
+    width: 100%;
+  }
+
+  /* SCROLL */
+
+  .scroll-cue {
+    position: absolute;
+    z-index: 3;
+    right: var(--page-padding);
+    bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    opacity: 0.6;
+  }
+
+  .scroll-cue span {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+  }
+
+  .scroll-cue div {
+    width: 38px;
+    height: 1px;
+    background: currentColor;
+  }
+
+  @media (max-width: 900px) {
+    .hero {
+      min-height: 100svh;
+    }
+
+    .hero-content {
+      display: block;
+      padding-bottom: 6.5rem;
+    }
+
+    .hero-copy {
+      max-width: 650px;
+    }
+
+    .hero-heading {
+      font-size: clamp(3.5rem, 14vw, 6.5rem);
+    }
+
+    .hero-navigation {
+      width: min(100%, 320px);
+      margin-top: 3rem;
+    }
+
+    .hero-count {
+      justify-content: flex-start;
+    }
+
+    .scroll-cue {
+      display: none;
+    }
+
+    .hero-overlay {
+      background:
+        linear-gradient(
+          0deg,
+          rgb(3 14 28 / 82%) 0%,
+          rgb(3 14 28 / 30%) 65%,
+          rgb(3 14 28 / 30%) 100%
+        );
+    }
+  }
+
+  @media (max-width: 560px) {
+    .hero-heading {
+      font-size: clamp(3rem, 16vw, 5rem);
+      line-height: 0.88;
+    }
+
+    .hero-description {
+      max-width: 300px;
+    }
+
+    .hero-actions {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .hero-primary {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .hero-navigation {
+      margin-top: 2rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-slide,
+    .hero-slide img {
+      transition: none;
+    }
+
+    .hero-slide img {
+      transform: none;
+    }
+  }
+</style>

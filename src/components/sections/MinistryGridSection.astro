@@ -1,0 +1,231 @@
+---
+import imageUrlBuilder from "@sanity/image-url";
+import { sanityClient } from "sanity:client";
+import { resolveLink } from "../../lib/links";
+
+const { section } = Astro.props;
+
+const builder = imageUrlBuilder(sanityClient);
+
+function imageUrl(image: any) {
+  if (!image?.asset) return "";
+
+  return builder
+    .image(image)
+    .width(1200)
+    .height(1500)
+    .fit("crop")
+    .auto("format")
+    .quality(88)
+    .url();
+}
+
+function getHref(link: any) {
+  if (!link) return "#";
+
+  return link.linkType === "external"
+    ? link.externalUrl ?? "#"
+    : link.internalPath ?? "#";
+}
+
+let ministries = [];
+
+switch (section?.selectionMode) {
+  case "manual":
+    ministries = section?.ministries ?? [];
+    break;
+
+  case "all":
+    ministries = section?.allMinistries ?? [];
+    break;
+
+  default:
+    ministries = section?.featuredMinistries ?? [];
+}
+
+if (section?.selectionMode !== "manual") {
+  ministries = ministries.slice(0, section?.limit ?? 6);
+}
+---
+
+<section class="collection-section">
+  <div class="container">
+
+    <div class="section-heading">
+      <div>
+        {section?.eyebrow && <p class="eyebrow">{section.eyebrow}</p>}
+        {section?.heading && <h2>{section.heading}</h2>}
+        {section?.accentText && <p class="accent">{section.accentText}</p>}
+      </div>
+
+      <div>
+        {section?.description && <p class="description">{section.description}</p>}
+
+        {section?.cta?.link && (
+          <a class="section-link" href={resolveLink(section.cta.link)}>
+            {section.cta.link.label} →
+          </a>
+        )}
+      </div>
+    </div>
+
+    <div class="grid">
+      {ministries.map((ministry: any) => (
+        <a
+          class="card"
+          href={`/get-involved/ministries/${ministry.slug}`}
+        >
+          <img
+            src={imageUrl(ministry.image)}
+            alt={ministry.image?.alt ?? ministry.name}
+            loading="lazy"
+          />
+
+          <div class="overlay"></div>
+
+          <div class="card-copy">
+            {ministry.audience && (
+              <p>{ministry.audience.replace("-", " ")}</p>
+            )}
+
+            <h3>{ministry.name}</h3>
+            <span>EXPLORE →</span>
+          </div>
+        </a>
+      ))}
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .collection-section {
+    padding-block: var(--section-space-lg);
+    background: var(--color-brand-ivory);
+  }
+
+  .section-heading {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: clamp(3rem, 8vw, 9rem);
+    align-items: end;
+    margin-bottom: clamp(3rem, 6vw, 6rem);
+  }
+
+  .eyebrow {
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin-top: 1rem;
+    font-size: clamp(3rem, 7vw, 7rem);
+    text-transform: uppercase;
+  }
+
+  .accent {
+    font-family: var(--font-editorial);
+    font-size: clamp(2rem, 4vw, 4rem);
+    font-style: italic;
+  }
+
+  .description {
+    color: var(--color-text-muted);
+  }
+
+  .section-link {
+    display: inline-block;
+    margin-top: 1.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid currentColor;
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .card {
+    position: relative;
+    min-height: 520px;
+    overflow: hidden;
+    background: var(--color-brand-navy);
+    color: white;
+  }
+
+  .card img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 700ms ease;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        0deg,
+        rgb(3 14 28 / 82%) 0%,
+        rgb(3 14 28 / 10%) 65%
+      );
+  }
+
+  .card-copy {
+    position: absolute;
+    z-index: 2;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: 2rem;
+  }
+
+  .card-copy p {
+    color: var(--color-brand-gold);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .card-copy h3 {
+    margin-top: 0.7rem;
+    font-size: clamp(2rem, 3.5vw, 3.5rem);
+    text-transform: uppercase;
+  }
+
+  .card-copy span {
+    display: inline-block;
+    margin-top: 1rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+  }
+
+  .card:hover img {
+    transform: scale(1.04);
+  }
+
+  @media (max-width: 900px) {
+    .section-heading {
+      grid-template-columns: 1fr;
+    }
+
+    .grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

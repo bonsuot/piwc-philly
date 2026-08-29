@@ -1,17 +1,376 @@
 ---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import HeroCarousel from "../components/sections/HeroCarousel.astro";
+import ImageTextSection from "../components/sections/ImageTextSection.astro";
+import SundayExperience from "../components/sections/SundayExperience.astro";
+import CommunitySection from "../components/sections/CommunitySection.astro";
+import LatestMessage from "../components/sections/LatestMessage.astro";
+import UpcomingEvents from "../components/sections/UpcomingEvents.astro";
 
+import { sanityClient } from "sanity:client";
+import groq from "groq";
+
+const homepageQuery = groq`
+{
+  "settings": *[_id == "siteSettings"][0] {
+    churchName,
+    description
+  },
+
+  "featuredMinistries": *[
+  _type == "ministry" &&
+  featured == true
+] | order(name asc)[0...6] {
+  _id,
+  name,
+  "slug": slug.current,
+  shortDescription,
+  audience,
+
+  image {
+    asset,
+    hotspot,
+    crop,
+    alt
+  }
+},
+
+"latestSermon": *[
+  _type == "sermon"
+] | order(date desc)[0] {
+  _id,
+  title,
+  "slug": slug.current,
+  date,
+  speakerName,
+  scripture,
+  shortDescription,
+  videoUrl,
+
+  series-> {
+    title,
+    "slug": slug.current
+  },
+
+  thumbnail {
+    asset,
+    hotspot,
+    crop,
+    alt
+  }
+},
+
+"upcomingEvents": *[
+  _type == "event" &&
+  startDate >= string::split(now(), "T")[0]
+] | order(startDate asc)[0...3] {
+  _id,
+  title,
+  "slug": slug.current,
+  startDate,
+  endDate,
+  startTime,
+  shortDescription,
+  customLocation,
+
+  location-> {
+    name,
+    city,
+    state
+  },
+
+  image {
+    asset,
+    hotspot,
+    crop,
+    alt
+  }
+},
+
+  "homepage": *[_id == "homepage"][0] {
+    heroEyebrow,
+    heroHeading,
+    heroDescription,
+
+    heroSlides[] {
+      label,
+
+      image {
+        asset,
+        hotspot,
+        crop,
+        alt,
+        caption
+      }
+    },
+
+    primaryCta {
+      style,
+
+      link {
+        label,
+        linkType,
+        externalUrl,
+        openInNewTab,
+        internalPath,
+
+        internalReference-> {
+          _type,
+          title,
+          name,
+          "slug": slug.current
+        }
+      },
+
+            
+   
+    },
+
+    secondaryCta {
+      style,
+
+      link {
+          label,
+          linkType,
+          externalUrl,
+          openInNewTab,
+          internalPath,
+
+          internalReference-> {
+            _type,
+            title,
+            name,
+            "slug": slug.current
+          }
+        }
+    },
+
+	introSection {
+		eyebrow,
+		heading,
+		accentText,
+		body,
+		imagePosition,
+		theme,
+
+		image {
+			asset,
+			hotspot,
+			crop,
+			alt,
+			caption
+		},
+
+		cta {
+			style,
+			link {
+        label,
+        linkType,
+        externalUrl,
+        openInNewTab,
+        internalPath,
+
+        internalReference-> {
+  _type,
+  title,
+  name,
+  "slug": slug.current,
+
+  parent-> {
+    "slug": slug.current,
+
+    parent-> {
+      "slug": slug.current
+    }
+  }
+}
+      }
+		}
+		},
+
+
+	sundaySection {
+	eyebrow,
+	heading,
+	description,
+
+	service-> {
+		name,
+		day,
+		startTime,
+		endTime,
+
+		location-> {
+		name,
+		street,
+		city,
+		state,
+		zip,
+		mapsUrl
+		}
+	},
+
+	cta {
+		style,
+		link {
+        label,
+        linkType,
+        externalUrl,
+        openInNewTab,
+        internalPath,
+
+        internalReference-> {
+          _type,
+          title,
+          name,
+          "slug": slug.current
+        }
+      }
+	}
+},
+
+   communitySection {
+    eyebrow,
+    heading,
+    accentText,
+    description,
+
+    cta {
+      style,
+      link {
+        label,
+        linkType,
+        externalUrl,
+        openInNewTab,
+        internalPath,
+
+        internalReference-> {
+          _type,
+          title,
+          name,
+          "slug": slug.current
+        }
+      }
+    }
+  },
+
+  latestMessageSection {
+    eyebrow,
+    heading,
+    description,
+
+    cta {
+      style,
+      link {
+        label,
+        linkType,
+        externalUrl,
+        openInNewTab,
+        internalPath,
+
+        internalReference-> {
+          _type,
+          title,
+          name,
+          "slug": slug.current
+        }
+      }
+    }
+  },
+
+  eventsSection {
+  eyebrow,
+  heading,
+  accentText,
+  description,
+
+  cta {
+    style,
+    link {
+      label,
+      linkType,
+      externalUrl,
+      openInNewTab,
+      internalPath,
+
+      internalReference-> {
+        _type,
+        title,
+        name,
+        "slug": slug.current
+      }
+    }
+  }
+},
+
+  
+
+}
+}
+`;
+
+const data = await sanityClient.fetch(homepageQuery);
+
+const homepage = data?.homepage;
+const settings = data?.settings;
+const featuredMinistries = data?.featuredMinistries ?? [];
+const latestSermon = data?.latestSermon;
+const upcomingEvents = data?.upcomingEvents ?? [];
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout
+  title={settings?.churchName ?? "PIWC Philadelphia"}
+  description={settings?.description}
+>
+  <main>
+    <HeroCarousel
+      eyebrow={homepage?.heroEyebrow}
+      heading={homepage?.heroHeading}
+      description={homepage?.heroDescription}
+      slides={homepage?.heroSlides}
+      primaryCta={homepage?.primaryCta}
+      secondaryCta={homepage?.secondaryCta}
+    />
+
+    <!-- Temporary section so we can test scrolling (has been replaced) -->
+    {
+  homepage?.introSection && (
+    <ImageTextSection section={homepage.introSection} />
+  )
+}
+
+{
+  homepage?.sundaySection && (
+    <SundayExperience section={homepage.sundaySection} />
+  )
+}
+
+{
+  homepage?.communitySection && (
+    <CommunitySection
+      section={homepage.communitySection}
+      ministries={featuredMinistries}
+    />
+  )
+}
+
+{
+  homepage?.latestMessageSection && latestSermon && (
+    <LatestMessage
+      section={homepage.latestMessageSection}
+      sermon={latestSermon}
+    />
+  )
+}
+
+
+{
+  homepage?.eventsSection && upcomingEvents.length > 0 && (
+    <UpcomingEvents
+      section={homepage.eventsSection}
+      events={upcomingEvents}
+    />
+  )
+}
+  </main>
+</BaseLayout>

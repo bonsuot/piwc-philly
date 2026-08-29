@@ -1,0 +1,132 @@
+---
+const { section } = Astro.props;
+---
+
+<section class:list={["faq-section", section?.theme ?? "ivory"]}>
+  <div class="container faq-grid">
+
+    <header>
+      {section?.eyebrow && (
+        <p class="eyebrow">{section.eyebrow}</p>
+      )}
+
+      {section?.heading && (
+        <h2>{section.heading}</h2>
+      )}
+
+      {section?.accentText && (
+        <p class="accent">{section.accentText}</p>
+      )}
+    </header>
+
+    <div class="questions">
+      {section?.items?.map((item: any) => (
+        <details>
+          <summary>
+            <span>{item.question}</span>
+            <span class="icon" aria-hidden="true">+</span>
+          </summary>
+
+          <div class="answer">
+            <p>{item.answer}</p>
+          </div>
+        </details>
+      ))}
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .faq-section {
+    padding-block: var(--section-space-lg);
+  }
+
+  .ivory {
+    background: var(--color-brand-ivory);
+    color: var(--color-brand-charcoal);
+  }
+
+  .white {
+    background: var(--color-brand-white);
+    color: var(--color-brand-charcoal);
+  }
+
+  .navy {
+    background: var(--color-brand-navy);
+    color: white;
+  }
+
+  .faq-grid {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    gap: clamp(4rem, 8vw, 9rem);
+  }
+
+  .eyebrow {
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin-top: 1rem;
+    font-size: clamp(3rem, 6vw, 6rem);
+    text-transform: uppercase;
+  }
+
+  .accent {
+    font-family: var(--font-editorial);
+    font-size: clamp(2rem, 4vw, 4rem);
+    font-style: italic;
+  }
+
+  details {
+    border-top: 1px solid currentColor;
+  }
+
+  details:last-child {
+    border-bottom: 1px solid currentColor;
+  }
+
+  summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    align-items: center;
+    padding-block: 1.7rem;
+    cursor: pointer;
+    list-style: none;
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
+    font-weight: 700;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .icon {
+    flex: 0 0 auto;
+    font-size: 1.5rem;
+    transition: transform 200ms ease;
+  }
+
+  details[open] .icon {
+    transform: rotate(45deg);
+  }
+
+  .answer {
+    max-width: 650px;
+    padding: 0 3rem 1.7rem 0;
+    opacity: 0.7;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 800px) {
+    .faq-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

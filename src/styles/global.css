@@ -1,0 +1,176 @@
+@import "tailwindcss";
+
+:root {
+  /* PIWC Brand */
+  --color-brand-navy: #071a33;
+  --color-brand-gold: #f5c518;
+  --color-brand-ivory: #f7f5ef;
+  --color-brand-charcoal: #171717;
+  --color-brand-stone: #e8e5dd;
+  --color-brand-white: #ffffff;
+  --color-brand-red: #a33b3b;
+
+  /* Semantic colors */
+  --color-background: var(--color-brand-ivory);
+  --color-surface: var(--color-brand-white);
+  --color-surface-dark: var(--color-brand-navy);
+
+  --color-text-primary: var(--color-brand-charcoal);
+  --color-text-light: var(--color-brand-white);
+  --color-text-muted: #66645f;
+
+  --color-border: var(--color-brand-stone);
+  --color-accent: var(--color-brand-gold);
+
+  /* Typography */
+  --font-display: "Archivo", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-editorial: "DM Serif Display", Georgia, serif;
+
+  /* Layout */
+  --container-width: 1440px;
+  --page-padding: clamp(1.25rem, 4vw, 4rem);
+
+  /* Spacing */
+  --section-space-sm: clamp(4rem, 8vw, 7rem);
+  --section-space-md: clamp(5rem, 10vw, 9rem);
+  --section-space-lg: clamp(7rem, 12vw, 12rem);
+
+  /* Motion */
+  --transition-fast: 180ms ease;
+  --transition-base: 300ms ease;
+  --transition-slow: 700ms ease;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--color-background);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+
+p {
+  line-height: 1.7;
+}
+
+::selection {
+  background: var(--color-brand-gold);
+  color: var(--color-brand-navy);
+}
+
+.container {
+  width: min(
+    calc(100% - (var(--page-padding) * 2)),
+    var(--container-width)
+  );
+  margin-inline: auto;
+}
+
+.section {
+  padding-block: var(--section-space-md);
+}
+
+.display-heading {
+  font-size: clamp(3.5rem, 9vw, 8.5rem);
+  line-height: 0.88;
+  letter-spacing: -0.05em;
+}
+
+.section-heading {
+  font-size: clamp(2.5rem, 6vw, 5.5rem);
+}
+
+.editorial-text {
+  font-family: var(--font-editorial);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.bg-navy {
+  background: var(--color-brand-navy);
+  color: var(--color-brand-white);
+}
+
+.bg-ivory {
+  background: var(--color-brand-ivory);
+}
+
+.bg-white {
+  background: var(--color-brand-white);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body.nav-open {
+  overflow: hidden;
+}

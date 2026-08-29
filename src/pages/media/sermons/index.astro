@@ -1,0 +1,196 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import imageUrlBuilder from "@sanity/image-url";
+import { sanityClient } from "sanity:client";
+import groq from "groq";
+
+const builder = imageUrlBuilder(sanityClient);
+
+function imageUrl(image: any) {
+  if (!image?.asset) return "";
+
+  return builder
+    .image(image)
+    .width(1200)
+    .height(750)
+    .fit("crop")
+    .auto("format")
+    .quality(88)
+    .url();
+}
+
+const sermons = await sanityClient.fetch(
+  groq`
+    *[_type == "sermon"] | order(date desc) {
+      _id,
+      title,
+      "slug": slug.current,
+      date,
+      speakerName,
+      scripture,
+
+      series-> {
+        title
+      },
+
+      thumbnail {
+        asset,
+        hotspot,
+        crop,
+        alt
+      }
+    }
+  `
+);
+
+function formatDate(date: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(`${date}T12:00:00`));
+}
+---
+
+<BaseLayout
+  title="Messages | PIWC Philadelphia"
+  description="Watch sermons and messages from PIWC Philadelphia."
+>
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <p>MEDIA</p>
+
+        <h1>
+          MESSAGES THAT
+          <span>build faith.</span>
+        </h1>
+      </div>
+    </section>
+
+    <section class="archive">
+      <div class="container grid">
+        {sermons.map((sermon: any) => (
+          <a
+            href={`/media/sermons/${sermon.slug}`}
+            class="card"
+          >
+            <div class="image">
+              <img
+                src={imageUrl(sermon.thumbnail)}
+                alt={sermon.thumbnail?.alt ?? sermon.title}
+                loading="lazy"
+              />
+            </div>
+
+            <div class="meta">
+              <span>
+                {sermon.series?.title ?? "Message"}
+              </span>
+
+              <span>
+                {formatDate(sermon.date)}
+              </span>
+            </div>
+
+            <h2>{sermon.title}</h2>
+
+            <p>{sermon.speakerName}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .page-hero {
+    padding:
+      clamp(10rem, 17vw, 15rem)
+      0
+      var(--section-space-md);
+    background: var(--color-brand-navy);
+    color: white;
+  }
+
+  .page-hero > .container > p {
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+  }
+
+  .page-hero h1 {
+    margin-top: 1.25rem;
+    max-width: 1100px;
+    font-size: clamp(4rem, 9vw, 9rem);
+    text-transform: uppercase;
+  }
+
+  .page-hero h1 span {
+    display: block;
+    font-family: var(--font-editorial);
+    font-weight: 400;
+    font-style: italic;
+    text-transform: none;
+  }
+
+  .archive {
+    padding-block: var(--section-space-lg);
+    background: var(--color-brand-ivory);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(3rem, 6vw, 6rem) 1.5rem;
+  }
+
+  .image {
+    overflow: hidden;
+    background: var(--color-brand-navy);
+  }
+
+  .image img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    transition: transform 700ms ease;
+  }
+
+  .card:hover .image img {
+    transform: scale(1.03);
+  }
+
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    color: var(--color-text-muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .card h2 {
+    margin-top: 0.8rem;
+    font-size: clamp(2rem, 3.5vw, 3.5rem);
+    text-transform: uppercase;
+  }
+
+  .card > p {
+    margin-top: 0.6rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-editorial);
+    font-size: 1.15rem;
+    font-style: italic;
+  }
+
+  @media (max-width: 700px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

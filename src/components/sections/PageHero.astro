@@ -1,0 +1,140 @@
+---
+import imageUrlBuilder from "@sanity/image-url";
+import { sanityClient } from "sanity:client";
+
+const { section } = Astro.props;
+
+const builder = imageUrlBuilder(sanityClient);
+
+const backgroundImage = section?.image?.asset
+  ? builder
+      .image(section.image)
+      .width(2200)
+      .height(1300)
+      .fit("crop")
+      .auto("format")
+      .quality(90)
+      .url()
+  : null;
+
+const hasImage = section?.theme === "image" && backgroundImage;
+---
+
+<section
+  class:list={[
+    "page-hero",
+    `theme-${section?.theme ?? "dark"}`,
+    { "has-image": hasImage },
+  ]}
+>
+  {
+    hasImage && (
+      <>
+        <img
+          src={backgroundImage}
+          alt={section.image?.alt ?? ""}
+        />
+        <div class="overlay"></div>
+      </>
+    )
+  }
+
+  <div class="container content">
+    {section?.eyebrow && (
+      <p class="eyebrow">{section.eyebrow}</p>
+    )}
+
+    <h1>{section.heading}</h1>
+
+    {section?.accentText && (
+      <p class="accent">{section.accentText}</p>
+    )}
+
+    {section?.description && (
+      <p class="description">{section.description}</p>
+    )}
+  </div>
+</section>
+
+<style>
+  .page-hero {
+    position: relative;
+    display: flex;
+    min-height: 72svh;
+    align-items: flex-end;
+    overflow: hidden;
+    padding:
+      clamp(10rem, 17vw, 15rem)
+      0
+      var(--section-space-md);
+  }
+
+  .theme-dark {
+    background: var(--color-brand-navy);
+    color: white;
+  }
+
+  .theme-light {
+    background: var(--color-brand-ivory);
+    color: var(--color-brand-charcoal);
+  }
+
+  .has-image {
+    min-height: 85svh;
+    color: white;
+  }
+
+  .has-image > img,
+  .overlay {
+    position: absolute;
+    inset: 0;
+  }
+
+  .has-image > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .overlay {
+    background:
+      linear-gradient(
+        0deg,
+        rgb(3 14 28 / 80%) 0%,
+        rgb(3 14 28 / 15%) 70%
+      );
+  }
+
+  .content {
+    position: relative;
+    z-index: 2;
+  }
+
+  .eyebrow {
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    max-width: 1150px;
+    margin-top: 1.25rem;
+    font-size: clamp(4rem, 10vw, 9rem);
+    text-transform: uppercase;
+  }
+
+  .accent {
+    font-family: var(--font-editorial);
+    font-size: clamp(2.5rem, 5vw, 5rem);
+    font-style: italic;
+  }
+
+  .description {
+    max-width: 620px;
+    margin-top: 2rem;
+    font-size: 1.1rem;
+    opacity: 0.75;
+  }
+</style>

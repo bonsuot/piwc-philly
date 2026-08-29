@@ -12,6 +12,22 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^7.2.4"
+    "@astrojs/netlify": "^8.2.4",
+    "@astrojs/sitemap": "^3.7.3",
+    "@sanity/astro": "^3.5.1",
+    "@sanity/client": "^8.2.0",
+    "@sanity/image-url": "^2.1.1",
+    "@tailwindcss/typography": "^0.5.20",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.2.4",
+    "astro-portabletext": "^0.13.0",
+    "groq": "^6.10.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-is": "^19.2.8",
+    "resend": "^6.24.0",
+    "sanity": "^6.10.1",
+    "styled-components": "^6.5.3",
+    "tailwindcss": "^4.3.3"
   }
 }
