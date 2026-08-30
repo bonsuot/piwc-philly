@@ -48,5 +48,22 @@ export const livestreamSection = defineType({
       type: "string",
       initialValue: "WATCH LIVE",
     }),
+
+    defineField({
+  name: "liveStreamUrl",
+  title: "Livestream URL",
+  type: "url",
+  description:
+    "Paste the YouTube Live or YouTube channel URL here.",
+}),
+
+defineField({
+  name: "featuredVideoUrl",
+  title: "Featured Video URL",
+  type: "url",
+  description:
+    "Optional. Paste a YouTube video URL if you want to feature a specific service.",
+}),
+
   ],
 });

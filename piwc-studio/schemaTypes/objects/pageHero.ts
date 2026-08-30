@@ -47,6 +47,9 @@ export const pageHero = defineType({
         list: [
           { title: "Dark", value: "dark" },
           { title: "Light", value: "light" },
+          { title: "Gray", value: "gray" },
+          { title: "Ivory", value: "ivory" },
+          { title: "Gold", value: "gold" },
           { title: "Image", value: "image" },
         ],
       },

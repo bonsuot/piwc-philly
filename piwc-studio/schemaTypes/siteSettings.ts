@@ -28,6 +28,11 @@ export const siteSettings = defineType({
       name: "media",
       title: "Media",
     },
+
+    {
+      name: "alert",
+      title: "Site Alert",
+    },
   ],
 
   fields: [
@@ -147,57 +152,108 @@ export const siteSettings = defineType({
     }),
 
     defineField({
-  name: "footerDescription",
-  title: "Footer Description",
-  type: "text",
-  rows: 3,
-  group: "general",
-}),
+      name: "footerDescription",
+      title: "Footer Description",
+      type: "text",
+      rows: 3,
+      group: "general",
+    }),
 
-defineField({
-  name: "footerLinks",
-  title: "Footer Links",
-  type: "array",
-  group: "general",
-  of: [{ type: "link" }],
-}),
+    defineField({
+      name: "footerLinks",
+      title: "Footer Links",
+      type: "array",
+      group: "general",
+      of: [{ type: "link" }],
+    }),
 
-defineField({
-  name: "copyrightText",
-  title: "Copyright Text",
-  type: "string",
-  group: "general",
-}),
+    defineField({
+      name: "copyrightText",
+      title: "Copyright Text",
+      type: "string",
+      group: "general",
+    }),
 
-defineField({
-  name: "defaultSeo",
-  title: "Default SEO",
-  type: "seo",
-  group: "general",
-}),
+    defineField({
+      name: "defaultSeo",
+      title: "Default SEO",
+      type: "seo",
+      group: "general",
+    }),
 
-defineField({
-  name: "liveStreamUrl",
-  title: "Live Stream URL",
-  type: "url",
-  group: "media",
-  description:
-    "Primary livestream destination, e.g. YouTube Live.",
-}),
+    defineField({
+      name: "liveStreamUrl",
+      title: "Live Stream URL",
+      type: "url",
+      group: "media",
+      description:
+        "Primary livestream destination, e.g. YouTube Live.",
+    }),
 
-defineField({
-  name: "youtubeChannelUrl",
-  title: "YouTube Channel URL",
-  type: "url",
-  group: "media",
-}),
+    defineField({
+      name: "youtubeChannelUrl",
+      title: "YouTube Channel URL",
+      type: "url",
+      group: "media",
+    }),
 
-defineField({
-  name: "liveStreamImage",
-  title: "Livestream Image",
-  type: "accessibleImage",
-  group: "media",
-}),
+    defineField({
+      name: "liveStreamImage",
+      title: "Livestream Image",
+      type: "accessibleImage",
+      group: "media",
+    }),
+
+    defineField({
+      name: "siteAlert",
+      title: "Site Alert",
+      type: "object",
+      group: "alert",
+
+      fields: [
+        defineField({
+          name: "enabled",
+          title: "Show Alert",
+          type: "boolean",
+          initialValue: false,
+        }),
+
+      defineField({
+        name: "message",
+        title: "Message",
+        type: "string",
+        validation: (Rule) => Rule.max(180),
+      }),
+
+      defineField({
+        name: "style",
+        title: "Alert Style",
+        type: "string",
+        initialValue: "info",
+        options: {
+          layout: "radio",
+          list: [
+            { title: "Info", value: "info" },
+            { title: "Important", value: "important" },
+            { title: "Urgent", value: "urgent" },
+          ],
+        },
+      }),
+
+      defineField({
+        name: "link",
+        title: "Optional Link",
+        type: "link",
+      }),
+
+      defineField({
+        name: "dismissible",
+        title: "Allow visitors to dismiss",
+        type: "boolean",
+        initialValue: true,
+      }),
+    ],
+  }),
 
     
   ],

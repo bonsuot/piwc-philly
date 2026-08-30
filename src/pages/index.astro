@@ -62,6 +62,7 @@ const homepageQuery = groq`
 
 "upcomingEvents": *[
   _type == "event" &&
+  featured == true &&
   startDate >= string::split(now(), "T")[0]
 ] | order(startDate asc)[0...3] {
   _id,
@@ -255,6 +256,7 @@ const homepageQuery = groq`
   },
 
   latestMessageSection {
+    enabled,
     eyebrow,
     heading,
     description,
@@ -355,7 +357,8 @@ const upcomingEvents = data?.upcomingEvents ?? [];
 }
 
 {
-  homepage?.latestMessageSection && latestSermon && (
+  homepage?.latestMessageSection?.enabled !== false &&
+  latestSermon && (
     <LatestMessage
       section={homepage.latestMessageSection}
       sermon={latestSermon}

@@ -4,6 +4,7 @@
   /* PIWC Brand */
   --color-brand-navy: #071a33;
   --color-brand-gold: #f5c518;
+  --color-brand-gold-dark: #b8860b;
   --color-brand-ivory: #f7f5ef;
   --color-brand-charcoal: #171717;
   --color-brand-stone: #e8e5dd;
@@ -139,6 +140,22 @@ p {
   font-style: italic;
 }
 
+.eyebrow {
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.eyebrow--gold {
+  color: var(--color-brand-gold);
+}
+
+.eyebrow--gold-dark {
+  color: var(--color-brand-gold-dark);
+}
+
 .text-muted {
   color: var(--color-text-muted);
 }
@@ -154,6 +171,44 @@ p {
 
 .bg-white {
   background: var(--color-brand-white);
+}
+
+/* Section Themes */
+
+.theme-dark {
+  background: var(--color-brand-navy);
+  color: var(--color-brand-white);
+}
+
+.theme-gray {
+  background: var(--color-brand-stone);
+  color: var(--color-brand-charcoal);
+}
+
+.theme-ivory {
+  background: var(--color-brand-ivory);
+  color: var(--color-brand-charcoal);
+}
+
+.theme-gold {
+  background: var(--color-brand-gold);
+  color: var(--color-brand-navy);
+}
+
+
+/* Eyebrow colors within themes */
+
+.theme-dark .eyebrow {
+  color: var(--color-brand-gold);
+}
+
+.theme-gray .eyebrow,
+.theme-ivory .eyebrow {
+  color: var(--color-brand-gold-dark);
+}
+
+.theme-gold .eyebrow {
+  color: var(--color-brand-navy);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -5,13 +5,11 @@ import { sanityClient } from "sanity:client";
 const { section } = Astro.props;
 
 const media = section?.siteMedia;
+const liveStreamUrl = section?.liveStreamUrl;
 
 const builder = imageUrlBuilder(sanityClient);
 
-const imageSource =
-  section?.image?.asset
-    ? section.image
-    : media?.liveStreamImage;
+const imageSource = section?.image;
 
 const imageUrl = imageSource?.asset
   ? builder
@@ -80,9 +78,9 @@ const imageUrl = imageSource?.asset
         </h3>
 
         {
-          media?.liveStreamUrl && (
+          liveStreamUrl && (
             <a
-              href={media.liveStreamUrl}
+              href={liveStreamUrl}
               target="_blank"
               rel="noopener noreferrer"
             >

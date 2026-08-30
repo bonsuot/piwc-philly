@@ -1,0 +1,171 @@
+---
+import { resolveLink } from "../../lib/links";
+
+const { alert } = Astro.props;
+
+const href =
+  alert?.link
+    ? resolveLink(alert.link)
+    : null;
+---
+
+<div
+  class:list={[
+    "site-alert",
+    `site-alert--${alert?.style ?? "info"}`
+  ]}
+  data-site-alert
+>
+  <div class="site-alert-inner">
+
+    <div class="site-alert-content">
+      <span class="site-alert-label">
+        {
+          alert?.style === "urgent"
+            ? "URGENT"
+            : alert?.style === "important"
+            ? "IMPORTANT"
+            : "NOTICE"
+        }
+      </span>
+
+      <span class="site-alert-message">
+        {alert.message}
+      </span>
+
+      {
+        href && alert?.link?.label && (
+          <a
+            href={href}
+            target={
+              alert.link.openInNewTab
+                ? "_blank"
+                : undefined
+            }
+            rel={
+              alert.link.openInNewTab
+                ? "noopener noreferrer"
+                : undefined
+            }
+          >
+            {alert.link.label}
+            <span aria-hidden="true">→</span>
+          </a>
+        )
+      }
+    </div>
+
+    {
+      alert?.dismissible && (
+        <button
+          type="button"
+          aria-label="Dismiss site alert"
+          data-dismiss-alert
+        >
+          ×
+        </button>
+      )
+    }
+
+  </div>
+</div>
+
+<script>
+  const alert = document.querySelector(
+    "[data-site-alert]"
+  );
+
+  const dismiss = document.querySelector(
+    "[data-dismiss-alert]"
+  );
+
+  if (
+    alert instanceof HTMLElement &&
+    dismiss instanceof HTMLButtonElement
+  ) {
+    dismiss.addEventListener("click", () => {
+      alert.remove();
+    });
+  }
+</script>
+
+<style>
+  .site-alert {
+    position: relative;
+    z-index: 200;
+    width: 100%;
+  }
+
+  .site-alert-inner {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding:
+      0.65rem
+      var(--page-padding);
+  }
+
+  .site-alert-content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+  }
+
+  .site-alert-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+  }
+
+  .site-alert-message {
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  .site-alert a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-bottom: 1px solid currentColor;
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  .site-alert button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  .site-alert--info {
+    background: var(--color-brand-navy);
+    color: white;
+  }
+
+  .site-alert--important {
+    background: var(--color-brand-gold);
+    color: var(--color-brand-navy);
+  }
+
+  .site-alert--urgent {
+    background: var(--color-brand-red);
+    color: white;
+  }
+
+  @media (max-width: 700px) {
+    .site-alert-inner {
+      align-items: flex-start;
+    }
+
+    .site-alert-content {
+      display: grid;
+      gap: 0.4rem;
+    }
+  }
+</style>

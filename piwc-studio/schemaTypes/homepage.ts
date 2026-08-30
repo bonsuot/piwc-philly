@@ -187,6 +187,15 @@ export const homepage = defineType({
 
   fields: [
     defineField({
+      name: "enabled",
+      title: "Show Latest Message Section",
+      type: "boolean",
+      initialValue: true,
+      description:
+        "Turn this off to hide the Latest Message section from the homepage.",
+    }),
+
+    defineField({
       name: "eyebrow",
       title: "Eyebrow",
       type: "string",
