@@ -195,11 +195,29 @@ const homepageQuery = groq`
 	heading,
 	description,
 
+    services[]-> {
+      _id,
+      name,
+      day,
+      startTime,
+      endTime,
+      active,
+      description,
+      meetingUrl,
+      meetingLinkLabel,
+      location-> { name, street, city, state, zip, mapsUrl }
+    },
+
 	service-> {
-		name,
-		day,
-		startTime,
-		endTime,
+    _id,
+    name,
+    day,
+    startTime,
+    endTime,
+		active,
+    description,
+		meetingUrl,
+		meetingLinkLabel,
 
 		location-> {
 		name,

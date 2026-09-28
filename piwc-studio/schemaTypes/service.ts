@@ -17,6 +17,7 @@ export const service = defineType({
       name: "day",
       title: "Day",
       type: "string",
+      description: "Examples: Sunday, Tuesday, or Monday–Friday",
       validation: (Rule) => Rule.required(),
     }),
 
@@ -39,7 +40,22 @@ export const service = defineType({
       title: "Location",
       type: "reference",
       to: [{ type: "location" }],
-      validation: (Rule) => Rule.required(),
+      description: "Physical meeting location. Leave blank for online-only gatherings.",
+    }),
+
+    defineField({
+      name: "meetingUrl",
+      title: "Online Meeting Link",
+      type: "url",
+      description: "Optional Zoom or other online meeting URL. May be used alongside a physical location.",
+      validation: (Rule) => Rule.uri({ scheme: ["https", "http"] }),
+    }),
+
+    defineField({
+      name: "meetingLinkLabel",
+      title: "Online Meeting Button Text",
+      type: "string",
+      description: "Example: Join Bible Study. Defaults to Join Online.",
     }),
 
     defineField({

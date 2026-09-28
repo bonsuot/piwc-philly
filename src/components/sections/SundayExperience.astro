@@ -1,29 +1,38 @@
 ---
+import { resolveLink } from "../../lib/links";
+
+interface Service {
+  name?: string;
+  day?: string;
+  startTime?: string;
+  endTime?: string;
+  active?: boolean;
+  description?: string;
+  meetingUrl?: string;
+  meetingLinkLabel?: string;
+  location?: {
+    name?: string;
+    street?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    mapsUrl?: string;
+  };
+}
+
 interface Props {
   section: any;
 }
 
 const { section } = Astro.props;
 
-function getHref(link: any) {
-  if (!link) return "#";
-
-  return link.linkType === "external"
-    ? link.externalUrl ?? "#"
-    : link.internalPath ?? "#";
-}
-
-const service = section?.service;
-const location = service?.location;
-
-const address = [
-  location?.street,
-  location?.city,
-  location?.state,
-  location?.zip,
-]
-  .filter(Boolean)
-  .join(", ");
+// Preserve existing content until the ordered service list is configured.
+const selectedServices: (Service | null)[] = section?.services?.length
+  ? section.services
+  : [section?.service];
+const services = selectedServices.filter(
+  (service): service is Service => Boolean(service) && service?.active !== false
+);
 ---
 
 <section class="sunday-section">
@@ -43,7 +52,9 @@ const address = [
 
       {section?.cta?.link && (
         <a
-          href={getHref(section.cta.link)}
+          href={resolveLink(section.cta.link)}
+          target={section.cta.link.openInNewTab ? "_blank" : undefined}
+          rel={section.cta.link.openInNewTab ? "noopener noreferrer" : undefined}
           class="visit-link"
         >
           {section.cta.link.label}
@@ -52,13 +63,22 @@ const address = [
       )}
     </div>
 
-    <div class="service-panel">
-      <p class="service-label">SUNDAY WORSHIP</p>
+    <div class="services-grid">
+    {services.map((service, index) => {
+      const location = service.location;
+      const address = [location?.street, location?.city, location?.state, location?.zip]
+        .filter(Boolean).join(", ");
+      return (
+    <article class:list={["service-panel", { "service-panel--featured": index === 0 }]}>
+      <h3 class="service-label">{service.name ?? "Sunday Worship"}</h3>
 
       <div class="service-time">
         <span>{service?.day}</span>
         <strong>{service?.startTime}</strong>
+        {service.endTime && <span class="end-time">Until {service.endTime}</span>}
       </div>
+
+      {service.description && <p class="service-description">{service.description}</p>}
 
       {location?.name && (
         <div class="service-location">
@@ -77,6 +97,14 @@ const address = [
           GET DIRECTIONS ↗
         </a>
       )}
+      {service.meetingUrl && (
+        <a href={service.meetingUrl} target="_blank" rel="noopener noreferrer" class="directions-link">
+          {service.meetingLinkLabel || "Join Online"} ↗
+        </a>
+      )}
+    </article>
+      );
+    })}
     </div>
   </div>
 </section>
@@ -90,11 +118,13 @@ const address = [
 
   .sunday-grid {
     display: grid;
-    grid-template-columns:
-      minmax(0, 1.1fr)
-      minmax(320px, 0.9fr);
-    gap: clamp(4rem, 8vw, 10rem);
-    align-items: end;
+    gap: clamp(3rem, 5vw, 5rem);
+  }
+
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem;
   }
 
   .eyebrow,
@@ -143,8 +173,18 @@ const address = [
   }
 
   .service-panel {
+    min-width: 0;
     border-top: 1px solid rgb(255 255 255 / 22%);
     padding-top: 1.5rem;
+  }
+
+  .service-panel--featured {
+    border-top-color: var(--color-brand-gold);
+  }
+
+  .service-description {
+    margin-top: 1.5rem;
+    color: rgb(255 255 255 / 75%);
   }
 
   .service-time {
@@ -161,13 +201,20 @@ const address = [
 
   .service-time strong {
     font-family: var(--font-display);
-    font-size: clamp(3.5rem, 7vw, 6.5rem);
+    font-size: clamp(2.5rem, 4vw, 4.5rem);
     line-height: 0.9;
     letter-spacing: -0.05em;
   }
 
   .service-location {
     margin-top: 2.5rem;
+  }
+
+  .service-time .end-time {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-style: normal;
+    margin-top: 0.5rem;
   }
 
   .service-location span {
@@ -185,14 +232,16 @@ const address = [
   .directions-link {
     display: inline-block;
     margin-top: 1.25rem;
+    margin-right: 1.5rem;
     color: var(--color-brand-gold);
     font-size: 0.72rem;
     font-weight: 800;
     letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   @media (max-width: 900px) {
-    .sunday-grid {
+    .services-grid {
       grid-template-columns: 1fr;
       gap: 4rem;
     }

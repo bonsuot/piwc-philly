@@ -133,7 +133,7 @@ export const homepage = defineType({
 
     defineField({
       name: "sundaySection",
-      title: "Sunday Experience",
+      title: "Weekly Gatherings",
       type: "object",
       group: "content",
       fields: [
@@ -142,7 +142,7 @@ export const homepage = defineType({
       name: "eyebrow",
       title: "Eyebrow",
       type: "string",
-      initialValue: "JOIN US THIS SUNDAY",
+      initialValue: "JOIN US THROUGHOUT THE WEEK",
     }),
 
     defineField({
@@ -161,10 +161,19 @@ export const homepage = defineType({
 
     defineField({
       name: "service",
-      title: "Service",
+      title: "Original Sunday Service (fallback)",
       type: "reference",
       to: [{ type: "service" }],
-      validation: (Rule) => Rule.required(),
+      description: "Used until you select Weekly Services below. Keep your existing Sunday service here during the transition.",
+    }),
+
+    defineField({
+      name: "services",
+      title: "Weekly Services",
+      type: "array",
+      description: "Select Sunday Worship, Bible Study, and Morning Prayer. Drag to reorder; the first gathering is highlighted.",
+      of: [{ type: "reference", to: [{ type: "service" }] }],
+      validation: (Rule) => Rule.unique(),
     }),
 
     defineField({
