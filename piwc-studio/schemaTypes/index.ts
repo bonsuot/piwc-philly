@@ -10,6 +10,8 @@ import { sermonSeries } from "./sermonSeries";
 import { event } from "./event";
 import { value } from "./value";
 import { valuesSection } from "./objects/valuesSection";
+import {belief} from "./belief";
+import { beliefsSection } from "./objects/beliefsSection";
 
 import { link } from "./objects/link";
 import { cta } from "./objects/cta";
@@ -45,6 +47,8 @@ export const schemaTypes = [
     event,
     value,
     valuesSection,
+    belief,
+    beliefsSection,
     person,
     peopleGridSection,
 

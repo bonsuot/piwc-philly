@@ -132,6 +132,15 @@ S.listItem()
   ),
 
   S.listItem()
+  .title("Church Beliefs")
+  .schemaType("belief")
+  .child(
+    S.documentTypeList("belief")
+      .title("Church Beliefs")
+      .defaultOrdering([{ field: "order", direction: "asc" }])
+  ),
+
+  S.listItem()
   .title("People & Leadership")
   .schemaType("person")
   .child(

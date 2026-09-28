@@ -1,0 +1,235 @@
+---
+import imageUrlBuilder from "@sanity/image-url";
+import { sanityClient } from "sanity:client";
+
+const { section } = Astro.props;
+
+const builder = imageUrlBuilder(sanityClient);
+
+function imageUrl(image: any) {
+  if (!image?.asset) return "";
+
+  return builder
+    .image(image)
+    .width(1200)
+    .height(900)
+    .fit("crop")
+    .auto("format")
+    .quality(88)
+    .url();
+}
+
+let beliefs = [];
+
+switch (section?.selectionMode) {
+  case "manual":
+    beliefs = section?.beliefs ?? [];
+    break;
+
+  case "all":
+    beliefs = section?.allBeliefs ?? [];
+    break;
+
+  default:
+    beliefs = section?.featuredBeliefs ?? [];
+}
+---
+
+<section class:list={["values-section", section?.theme ?? "ivory"]}>
+  <div class="container">
+
+    <div class="values-heading">
+      <div>
+        {section?.eyebrow && (
+          <p class="eyebrow">{section.eyebrow}</p>
+        )}
+
+        {section?.heading && (
+          <h2>{section.heading}</h2>
+        )}
+
+        {section?.accentText && (
+          <p class="accent">{section.accentText}</p>
+        )}
+      </div>
+
+      {section?.description && (
+        <p class="intro">
+          {section.description}
+        </p>
+      )}
+    </div>
+
+    <div class="values-grid">
+      {beliefs.map((belief: any, index: number) => (
+        <article class="value-card">
+
+          <div class="number">
+            {String(index + 1).padStart(2, "0")}
+          </div>
+
+          {belief.image?.asset && (
+            <img
+              src={imageUrl(belief.image)}
+              alt={belief.image?.alt ?? belief.title}
+              loading="lazy"
+            />
+          )}
+
+          <div class="value-copy">
+            <h3>{belief.title}</h3>
+
+            {belief.shortStatement && (
+              <p class="statement">
+                {belief.shortStatement}
+              </p>
+            )}
+
+            {belief.description && (
+              <p class="description">
+                {belief.description}
+              </p>
+            )}
+
+            {belief.scripture && (
+              <p class="scripture">
+                {belief.scripture}
+              </p>
+            )}
+          </div>
+
+        </article>
+      ))}
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .values-section {
+    padding-block: var(--section-space-lg);
+  }
+
+  .ivory {
+    background: var(--color-brand-ivory);
+    color: var(--color-brand-charcoal);
+  }
+
+  .white {
+    background: var(--color-brand-white);
+    color: var(--color-brand-charcoal);
+  }
+
+  .navy {
+    background: var(--color-brand-navy);
+    color: var(--color-brand-white);
+  }
+
+  .values-heading {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: clamp(3rem, 8vw, 9rem);
+    align-items: end;
+    margin-bottom: clamp(3rem, 6vw, 6rem);
+  }
+
+  .eyebrow {
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin-top: 1rem;
+    font-size: clamp(3rem, 7vw, 7rem);
+    text-transform: uppercase;
+  }
+
+  .accent {
+    margin-top: 0.4rem;
+    font-family: var(--font-editorial);
+    font-size: clamp(2rem, 4vw, 4rem);
+    font-style: italic;
+  }
+
+  .intro {
+    color: var(--color-text-muted);
+  }
+
+  .navy .intro {
+    color: rgb(255 255 255 / 65%);
+  }
+
+  .values-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    border-top: 1px solid currentColor;
+  }
+
+  .value-card {
+    position: relative;
+    padding: clamp(2rem, 4vw, 4rem);
+    border-bottom: 1px solid currentColor;
+  }
+
+  .value-card:nth-child(odd) {
+    border-right: 1px solid currentColor;
+  }
+
+  .number {
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+  }
+
+  .value-card img {
+    width: 100%;
+    margin-top: 2rem;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+
+  .value-copy {
+    margin-top: 2rem;
+  }
+
+  .value-copy h3 {
+    font-size: clamp(2.25rem, 4vw, 4rem);
+    text-transform: uppercase;
+  }
+
+  .statement {
+    margin-top: 0.8rem;
+    font-family: var(--font-editorial);
+    font-size: 1.35rem;
+    font-style: italic;
+  }
+
+  .description {
+    margin-top: 1.25rem;
+    opacity: 0.7;
+  }
+
+  .scripture {
+    margin-top: 1.25rem;
+    color: var(--color-brand-gold);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 800px) {
+    .values-heading,
+    .values-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .value-card:nth-child(odd) {
+      border-right: 0;
+    }
+  }
+</style>

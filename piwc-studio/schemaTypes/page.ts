@@ -56,6 +56,7 @@ export const page = defineType({
         { type: "sermonGridSection" },
         { type: "ctaSection" },
         { type: "valuesSection" },
+        { type: "beliefsSection" },
         { type: "prayerRequestSection" },
         { type: "peopleGridSection" },
         { type: "livestreamSection" },

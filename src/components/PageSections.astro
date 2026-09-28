@@ -10,6 +10,7 @@ import MinistryGridSection from "./sections/MinistryGridSection.astro";
 import EventGridSection from "./sections/EventGridSection.astro";
 import SermonGridSection from "./sections/SermonGridSection.astro";
 import ValuesSection from "./sections/ValuesSection.astro";
+import BeliefsSection from "./sections/BeliefsSection.astro";
 import PrayerRequestSection from "./sections/PrayerRequestSection.astro";
 import PeopleGridSection from "./sections/PeopleGridSection.astro";
 import LivestreamSection from "./sections/LivestreamSection.astro";
@@ -53,6 +54,9 @@ const { sections = [] } = Astro.props;
 
     case "valuesSection":
       return <ValuesSection section={section} />;
+
+    case "beliefsSection":
+      return <BeliefsSection section={section} />;
 
     case "prayerRequestSection":
       return <PrayerRequestSection section={section} />;

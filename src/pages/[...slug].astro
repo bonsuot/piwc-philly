@@ -467,6 +467,64 @@ const page = await sanityClient.fetch(
           }
         },
 
+      _type == "beliefsSection" => {
+        selectionMode,
+        theme,
+
+    beliefs[]-> {
+      _id,
+      title,
+      shortStatement,
+      description,
+      scripture,
+      order,
+
+      image {
+        asset,
+        hotspot,
+        crop,
+        alt
+      }
+    },
+
+    "featuredBeliefs": *[
+      _type == "belief" &&
+      featured == true
+    ] | order(order asc) {
+      _id,
+      title,
+      shortStatement,
+      description,
+      scripture,
+      order,
+
+      image {
+        asset,
+        hotspot,
+        crop,
+        alt
+      }
+    },
+
+    "allBeliefs": *[
+      _type == "belief"
+    ] | order(order asc) {
+      _id,
+      title,
+      shortStatement,
+      description,
+      scripture,
+      order,
+
+      image {
+        asset,
+        hotspot,
+        crop,
+        alt
+      }
+    }
+  },
+
         _type == "peopleGridSection" => {
           selectionMode,
           category,
