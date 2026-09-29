@@ -63,7 +63,7 @@ const homepageQuery = groq`
 "upcomingEvents": *[
   _type == "event" &&
   featured == true &&
-  startDate >= string::split(now(), "T")[0]
+  coalesce(endDate, startDate) >= string::split(now(), "T")[0]
 ] | order(startDate asc)[0...3] {
   _id,
   title,

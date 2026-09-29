@@ -111,12 +111,13 @@ const events = await sanityClient.fetch(
     *[
       _type == "event" &&
       defined(slug.current) &&
-      startDate >= string::split(now(), "T")[0]
+      coalesce(endDate, startDate) >= string::split(now(), "T")[0]
     ] | order(startDate asc) {
       _id,
       title,
       "slug": slug.current,
       startDate,
+      endDate,
       startTime,
       shortDescription,
       customLocation,
