@@ -198,6 +198,15 @@ export const siteSettings = defineType({
     }),
 
     defineField({
+      name: "youtubeChannelId",
+      title: "YouTube Channel ID",
+      type: "string",
+      group: "media",
+      description:
+        "The YouTube channel ID used to automatically detect when PIWC Philadelphia is live.",
+    }),
+
+    defineField({
       name: "liveStreamImage",
       title: "Livestream Image",
       type: "accessibleImage",

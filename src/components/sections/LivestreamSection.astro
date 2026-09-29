@@ -5,11 +5,17 @@ import { sanityClient } from "sanity:client";
 const { section } = Astro.props;
 
 const media = section?.siteMedia;
-const liveStreamUrl = section?.liveStreamUrl;
+
+const liveStreamUrl =
+  section?.liveStreamUrl ??
+  media?.liveStreamUrl ??
+  media?.youtubeChannelUrl;
+
+const imageSource =
+  section?.image ??
+  media?.liveStreamImage;
 
 const builder = imageUrlBuilder(sanityClient);
-
-const imageSource = section?.image;
 
 const imageUrl = imageSource?.asset
   ? builder
@@ -50,7 +56,7 @@ const imageUrl = imageSource?.asset
       )}
     </div>
 
-    <div class="live-card">
+    <div class="live-card" id="livestream-card">
       {
         imageUrl && (
           <img
@@ -92,8 +98,107 @@ const imageUrl = imageSource?.asset
       </div>
     </div>
 
+<div
+      class="live-player"
+      id="live-player"
+      hidden
+>
+    <div class="live-player-header">
+      <div class="live-now">
+        <span class="live-dot"></span>
+        LIVE NOW
+      </div>
+
+      <p id="live-title"></p>
+    </div>
+
+    <div class="video-wrapper">
+      <iframe
+        id="live-iframe"
+        title="PIWC Philadelphia Live"
+        src=""
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+      ></iframe>
+    </div>
+
+    <a
+      id="youtube-live-link"
+      class="youtube-live-link"
+      href="#"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      WATCH ON YOUTUBE
+      <span aria-hidden="true">↗</span>
+    </a>
+</div>
+
   </div>
 </section>
+
+<script>
+  async function checkLivestream() {
+    const offlineCard =
+      document.getElementById("livestream-card");
+
+    const livePlayer =
+      document.getElementById("live-player");
+
+    const iframe =
+      document.getElementById("live-iframe") as HTMLIFrameElement | null;
+
+    const title =
+      document.getElementById("live-title");
+
+    const youtubeLink =
+      document.getElementById("youtube-live-link") as HTMLAnchorElement | null;
+
+    if (
+      !offlineCard ||
+      !livePlayer ||
+      !iframe ||
+      !youtubeLink
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/youtube-live");
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = await response.json();
+
+      if (!data.isLive || !data.videoId) {
+        return;
+      }
+
+      iframe.src =
+        `https://www.youtube.com/embed/${data.videoId}`;
+
+      youtubeLink.href =
+        data.watchUrl ??
+        `https://www.youtube.com/watch?v=${data.videoId}`;
+
+      if (title && data.title) {
+        title.textContent = data.title;
+      }
+
+      offlineCard.hidden = true;
+      livePlayer.hidden = false;
+    } catch (error) {
+      console.error(
+        "Unable to check livestream status:",
+        error
+      );
+    }
+  }
+
+  checkLivestream();
+</script>
 
 <style>
   .livestream {
@@ -214,6 +319,87 @@ const imageUrl = imageSource?.asset
     font-weight: 800;
     letter-spacing: 0.08em;
   }
+
+  .live-player {
+  width: 100%;
+}
+
+.live-player[hidden],
+.live-card[hidden] {
+  display: none;
+}
+
+.live-player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 1.25rem;
+}
+
+.live-now {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--color-brand-gold);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e53935;
+  animation: live-pulse 1.5s infinite;
+}
+
+#live-title {
+  margin: 0;
+  color: rgb(255 255 255 / 70%);
+  font-size: 0.9rem;
+}
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #000;
+}
+
+.video-wrapper iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.youtube-live-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding: 1rem 1.35rem;
+  background: var(--color-brand-gold);
+  color: var(--color-brand-navy);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+}
 
   @media (max-width: 800px) {
     .heading {
