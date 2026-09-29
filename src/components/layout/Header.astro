@@ -214,6 +214,16 @@ const logoUrl = settings?.logo?.asset
       </div>
 
       <div class="nav-actions">
+        <a
+          href="/media"
+          class="header-live"
+          data-live-indicator
+          hidden
+        >
+          <span class="header-live-dot" aria-hidden="true"></span>
+          <span>LIVE NOW</span>
+        </a>
+
         {
           navigation?.secondaryCta?.link && (
             <a
@@ -289,6 +299,16 @@ const logoUrl = settings?.logo?.asset
       </nav>
 
       <div class="mobile-actions">
+        <a
+          href="/media"
+          class="header-live"
+          data-live-indicator
+          hidden
+        >
+          <span class="header-live-dot" aria-hidden="true"></span>
+          <span>LIVE NOW</span>
+        </a>
+
         {
           navigation?.primaryCta?.link && (
             <a
@@ -366,6 +386,42 @@ const logoUrl = settings?.logo?.asset
       }
     });
   }
+
+  async function checkHeaderLivestream() {
+  const indicators =
+    document.querySelectorAll<HTMLElement>(
+      "[data-live-indicator]"
+    );
+
+  if (!indicators.length) {
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/youtube-live");
+
+    if (!response.ok) {
+      return;
+    }
+
+    const data = await response.json();
+
+    if (!data.isLive) {
+      return;
+    }
+
+    indicators.forEach((indicator) => {
+      indicator.hidden = false;
+    });
+  } catch (error) {
+    console.error(
+      "Unable to check header livestream status:",
+      error
+    );
+  }
+}
+
+checkHeaderLivestream();
 </script>
 
 <style>
@@ -450,6 +506,55 @@ const logoUrl = settings?.logo?.asset
   .nav-actions {
     gap: 1.5rem;
   }
+
+  .header-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 999px;
+  color: var(--color-brand-white);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.header-live[hidden] {
+  display: none;
+}
+
+.header-live:hover {
+  border-color: var(--color-brand-gold);
+  background: rgb(255 255 255 / 8%);
+}
+
+.header-live-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: header-live-pulse 1.5s infinite;
+}
+
+@keyframes header-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+}
 
   .nav-item {
     position: relative;
@@ -737,6 +842,28 @@ const logoUrl = settings?.logo?.asset
     gap: 1rem;
     margin-top: 2rem;
   }
+  
+  .mobile-live {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgb(255 255 255 / 18%);
+  color: var(--color-brand-white);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mobile-live[hidden] {
+  display: none;
+}
+
+.mobile-live > span:last-child {
+  margin-left: auto;
+  color: var(--color-brand-gold);
+}
 
   .mobile-visit {
     display: flex;
