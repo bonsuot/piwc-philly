@@ -16,6 +16,7 @@ export default defineConfig({
       "siteSettings",
       "navigation",
       "homepage",
+      "connectPage",
     ]);
 
     if (singletonTypes.has(context.schemaType)) {
@@ -53,6 +54,15 @@ export default defineConfig({
             S.document()
               .schemaType("homepage")
               .documentId("homepage")
+          ),
+
+        S.listItem()
+          .title("Connect Page")
+          .id("connectPage")
+          .child(
+            S.document()
+              .schemaType("connectPage")
+              .documentId("connectPage")
           ),
 
         S.listItem()

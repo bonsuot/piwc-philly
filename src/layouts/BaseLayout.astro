@@ -14,6 +14,9 @@ interface Props {
   canonical?: string;
   image?: string;
   noIndex?: boolean;
+  showHeader?: boolean;
+  showFooter?: boolean;
+  showSiteAlert?: boolean;
 }
 
 const {
@@ -22,6 +25,9 @@ const {
   canonical,
   image,
   noIndex = false,
+  showHeader = true,
+  showFooter = true,
+  showSiteAlert = true,
 } = Astro.props;
 
 const canonicalUrl =
@@ -198,23 +204,26 @@ const siteAlert = await sanityClient.fetch(
     />
   </head>
 
-  <body
-    class:list={[
-    siteAlert?.enabled &&
+ <body
+  class:list={[
+    showSiteAlert &&
+      siteAlert?.enabled &&
       siteAlert?.message &&
       "has-site-alert"
-      ]}
-  >
+  ]}
+>
       {
-        siteAlert?.enabled && siteAlert?.message && (
+        showSiteAlert &&
+        siteAlert?.enabled &&
+        siteAlert?.message && (
           <SiteAlert alert={siteAlert} />
         )
-      }
+    }
 
-    <Header />
+    {showHeader && <Header />}
 
     <slot />
 
-    <Footer />
+    {showFooter && <Footer />}
   </body>
 </html>

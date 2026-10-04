@@ -1,0 +1,789 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { sanityClient } from "sanity:client";
+import groq from "groq";
+import imageUrlBuilder from "@sanity/image-url";
+
+const connectQuery = groq`
+{
+  "settings": *[_id == "siteSettings"][0] {
+    churchName,
+    shortName,
+    tagline,
+    givingUrl,
+
+    logo {
+      asset,
+      hotspot,
+      crop,
+      alt
+    },
+
+    logoLight {
+      asset,
+      hotspot,
+      crop,
+      alt
+    },
+
+    socialLinks[] {
+      platform,
+      url
+    }
+  },
+
+  "connectPage": *[_id == "connectPage"][0] {
+    eyebrow,
+    heading,
+    description,
+    footerText,
+
+    links[] {
+      _key,
+      eyebrow,
+      label,
+      destination,
+      customUrl,
+      featured,
+      openInNewTab
+    },
+
+    seo {
+      metaTitle,
+      metaDescription
+    }
+  }
+}
+`;
+
+const data = await sanityClient.fetch(connectQuery);
+
+const settings = data?.settings;
+const connectPage = data?.connectPage;
+
+const builder = imageUrlBuilder(sanityClient);
+
+const logoImage =
+  settings?.logoLight?.asset
+    ? settings.logoLight
+    : settings?.logo;
+
+const logoUrl = logoImage?.asset
+  ? builder
+      .image(logoImage)
+      .width(240)
+      .auto("format")
+      .quality(90)
+      .url()
+  : null;
+
+const socialLinks = new Map<string, string>(
+  (settings?.socialLinks ?? [])
+    .filter(
+      (item: any) =>
+        typeof item?.platform === "string" &&
+        typeof item?.url === "string"
+    )
+    .map((item: any) => [
+      item.platform.toLowerCase(),
+      item.url,
+    ])
+);
+
+const internalDestinations: Record<string, string> = {
+  home: "/",
+  prayer: "/get-involved/prayer",
+  events: "/events",
+  visit: "/visit",
+  gallery: "/media/gallery",
+  messages: "/media/sermons",
+};
+
+function resolveConnectLink(link: any) {
+  if (!link?.destination) {
+    return "#";
+  }
+
+  if (link.destination === "give") {
+    return settings?.givingUrl ?? "#";
+  }
+
+  if (
+    ["youtube", "instagram", "facebook", "tiktok"].includes(
+      link.destination
+    )
+  ) {
+    return socialLinks.get(link.destination) ?? "#";
+  }
+
+  if (link.destination === "custom") {
+    return link.customUrl ?? "#";
+  }
+
+  return internalDestinations[link.destination] ?? "#";
+}
+
+function isExternalUrl(url: string) {
+  return /^https?:\/\//i.test(url);
+}
+
+const links = (connectPage?.links ?? [])
+  .map((link: any) => ({
+    ...link,
+    href: resolveConnectLink(link),
+  }))
+  .filter((link: any) => link.href && link.href !== "#");
+
+const title =
+  connectPage?.seo?.metaTitle ??
+  `Connect | ${settings?.churchName ?? "PIWC Philadelphia"}`;
+
+const description =
+  connectPage?.seo?.metaDescription ??
+  connectPage?.description ??
+  "Stay connected with PIWC Philadelphia.";
+
+const heading =
+  connectPage?.heading ?? "Everything PIWC.";
+
+const headingWords = heading
+  .trim()
+  .split(/\s+/);
+
+const headingLastWord =
+  headingWords.length > 1
+    ? headingWords.pop()
+    : null;
+
+const headingMain = headingWords.join(" ");
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  showHeader={false}
+  showFooter={false}
+  showSiteAlert={false}
+>
+  <main class="connect-page">
+    <div class="connect-glow connect-glow--one"></div>
+    <div class="connect-glow connect-glow--two"></div>
+
+    <div class="connect-shell">
+
+      <!-- BRAND -->
+      <header class="connect-brand">
+        <a href="/" class="brand-link" aria-label="PIWC Philadelphia home">
+          {
+            logoUrl && (
+              <img
+                src={logoUrl}
+                alt={logoImage?.alt ?? settings?.churchName ?? "PIWC Philadelphia"}
+                width="120"
+                height="120"
+                class="connect-logo"
+              />
+            )
+          }
+
+          <div class="brand-name">
+            <strong>{settings?.shortName ?? "PIWC"}</strong>
+            <span>Philadelphia</span>
+          </div>
+        </a>
+      </header>
+
+      <!-- INTRO -->
+      <section class="connect-intro">
+        <p class="connect-eyebrow">
+          {connectPage?.eyebrow ?? "Connect With Us"}
+        </p>
+
+        <h1>
+          {headingMain || heading}
+          {
+            headingLastWord && (
+              <span>{headingLastWord}</span>
+            )
+          }
+        </h1>
+
+        {
+          connectPage?.description && (
+            <p class="connect-description">
+              {connectPage.description}
+            </p>
+          )
+        }
+      </section>
+
+      <!-- LINKS -->
+      {
+        links.length > 0 && (
+          <nav
+            class="connect-links"
+            aria-label="PIWC connection links"
+          >
+            {
+              links.map((link: any, index: number) => {
+                const external = isExternalUrl(link.href);
+
+                const newTab =
+                  link.openInNewTab === true;
+
+                return (
+                  <a
+                    href={link.href}
+                    class:list={[
+                      "connect-link",
+                      link.featured && "connect-link--featured",
+                    ]}
+                    target={newTab ? "_blank" : undefined}
+                    rel={
+                      newTab
+                        ? "noopener noreferrer"
+                        : undefined
+                    }
+                  >
+                    <div class="link-content">
+                      {link.eyebrow && (
+                        <span class="link-eyebrow">
+                          {link.eyebrow}
+                        </span>
+                      )}
+
+                      <span class="link-label">
+                        {link.label}
+                      </span>
+                    </div>
+
+                    <span
+                      class="link-arrow"
+                      aria-hidden="true"
+                    >
+                      {external ? "↗" : "→"}
+                    </span>
+
+                    <span
+                      class="link-number"
+                      aria-hidden="true"
+                    >
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                  </a>
+                );
+              })
+            }
+          </nav>
+        )
+      }
+
+      <!-- SOCIAL STRIP -->
+      {
+        settings?.socialLinks?.length > 0 && (
+          <nav
+            class="social-strip"
+            aria-label="PIWC social media"
+          >
+            {
+              settings.socialLinks.map((social: any) => (
+                <a
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {social.platform}
+                </a>
+              ))
+            }
+          </nav>
+        )
+      }
+
+      <!-- FOOTER -->
+      <footer class="connect-footer">
+        <div class="footer-rule"></div>
+
+        <p class="footer-message">
+          {
+            connectPage?.footerText ??
+            settings?.tagline ??
+            "A Place of Love, Healing & Provision."
+          }
+        </p>
+
+        <a href="/" class="footer-home">
+          {settings?.churchName ?? "PIWC Philadelphia"}
+          <span aria-hidden="true">→</span>
+        </a>
+      </footer>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .connect-page {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+    background:
+      linear-gradient(
+        180deg,
+        #071a33 0%,
+        #06172d 55%,
+        #041224 100%
+      );
+    color: var(--color-brand-white);
+  }
+
+  .connect-shell {
+    position: relative;
+    z-index: 2;
+
+    width: min(
+      calc(100% - 2.5rem),
+      680px
+    );
+
+    margin-inline: auto;
+    padding:
+      clamp(2rem, 6vw, 4rem)
+      0
+      clamp(3rem, 8vw, 5rem);
+  }
+
+  /* BACKGROUND DETAIL */
+
+  .connect-glow {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(2px);
+  }
+
+  .connect-glow--one {
+    top: -12rem;
+    right: -15rem;
+    width: 34rem;
+    height: 34rem;
+
+    background:
+      radial-gradient(
+        circle,
+        rgb(245 197 24 / 12%) 0%,
+        rgb(245 197 24 / 3%) 40%,
+        transparent 70%
+      );
+  }
+
+  .connect-glow--two {
+    bottom: 10%;
+    left: -18rem;
+    width: 30rem;
+    height: 30rem;
+
+    background:
+      radial-gradient(
+        circle,
+        rgb(255 255 255 / 5%) 0%,
+        transparent 70%
+      );
+  }
+
+  /* BRAND */
+
+  .connect-brand {
+    display: flex;
+    justify-content: center;
+  }
+
+  .brand-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .connect-logo {
+    width: 54px;
+    height: 54px;
+    object-fit: contain;
+  }
+
+  .brand-name {
+    display: flex;
+    flex-direction: column;
+    text-transform: uppercase;
+    line-height: 0.9;
+  }
+
+  .brand-name strong {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+
+  .brand-name span {
+    margin-top: 0.35rem;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+  }
+
+  /* INTRO */
+
+  .connect-intro {
+    padding:
+      clamp(4.5rem, 12vw, 7rem)
+      0
+      clamp(3.5rem, 9vw, 5rem);
+
+    text-align: center;
+  }
+
+  .connect-eyebrow {
+    margin-bottom: 1.5rem;
+    color: var(--color-brand-gold);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .connect-intro h1 {
+    max-width: 620px;
+    margin-inline: auto;
+    font-family: var(--font-display);
+    font-size:
+      clamp(3.75rem, 14vw, 7rem);
+    font-weight: 800;
+    letter-spacing: -0.065em;
+    line-height: 0.8;
+    text-transform: uppercase;
+  }
+
+  .connect-intro h1 span {
+    display: block;
+    margin-top: 0.18em;
+
+    color: var(--color-brand-gold);
+    font-family: var(--font-editorial);
+    font-size: 0.82em;
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: -0.04em;
+    text-transform: none;
+  }
+
+  .connect-description {
+    max-width: 430px;
+    margin:
+      clamp(2rem, 6vw, 3rem)
+      auto
+      0;
+
+    color: rgb(255 255 255 / 68%);
+    font-size: clamp(0.95rem, 3vw, 1.08rem);
+    line-height: 1.75;
+  }
+
+  /* LINKS */
+
+  .connect-links {
+    display: grid;
+  }
+
+  .connect-link {
+    position: relative;
+
+    display: flex;
+    min-height: 108px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+
+    padding:
+      1.5rem
+      clamp(1rem, 4vw, 1.5rem);
+
+    border-top:
+      1px solid rgb(255 255 255 / 17%);
+
+    transition:
+      background var(--transition-fast),
+      padding var(--transition-fast),
+      color var(--transition-fast);
+  }
+
+  .connect-link:last-child {
+    border-bottom:
+      1px solid rgb(255 255 255 / 17%);
+  }
+
+  .link-content {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .link-eyebrow {
+    color: var(--color-brand-gold);
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .link-label {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 5vw, 1.8rem);
+    font-weight: 750;
+    letter-spacing: -0.035em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .link-arrow {
+    position: relative;
+    z-index: 2;
+
+    display: grid;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    place-items: center;
+
+    border:
+      1px solid rgb(255 255 255 / 25%);
+    border-radius: 50%;
+
+    font-size: 1.15rem;
+
+    transition:
+      transform var(--transition-fast),
+      background var(--transition-fast),
+      color var(--transition-fast);
+  }
+
+  .link-number {
+    position: absolute;
+    right: 5rem;
+    bottom: 1rem;
+
+    color: rgb(255 255 255 / 14%);
+    font-family: var(--font-display);
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+  }
+
+  .connect-link:hover,
+  .connect-link:focus-visible {
+    padding-inline:
+      clamp(1.25rem, 5vw, 2rem);
+
+    background:
+      rgb(255 255 255 / 5%);
+  }
+
+  .connect-link:hover .link-arrow,
+  .connect-link:focus-visible .link-arrow {
+    transform: translateX(4px);
+    background: var(--color-brand-white);
+    color: var(--color-brand-navy);
+  }
+
+  /* FEATURED LINK */
+
+  .connect-link--featured {
+    min-height: 128px;
+    margin-bottom: 1.5rem;
+    padding:
+      1.75rem
+      clamp(1.25rem, 5vw, 2rem);
+
+    border: 0;
+    background: var(--color-brand-gold);
+    color: var(--color-brand-navy);
+  }
+
+  .connect-link--featured .link-eyebrow {
+    color:
+      rgb(7 26 51 / 68%);
+  }
+
+  .connect-link--featured .link-label {
+    font-size:
+      clamp(1.5rem, 6vw, 2.1rem);
+  }
+
+  .connect-link--featured .link-arrow {
+    border-color:
+      rgb(7 26 51 / 28%);
+  }
+
+  .connect-link--featured .link-number {
+    color:
+      rgb(7 26 51 / 22%);
+  }
+
+  .connect-link--featured:hover,
+  .connect-link--featured:focus-visible {
+    background: #ffd329;
+  }
+
+  .connect-link--featured:hover .link-arrow,
+  .connect-link--featured:focus-visible .link-arrow {
+    background: var(--color-brand-navy);
+    color: var(--color-brand-white);
+  }
+
+  /* SOCIAL STRIP */
+
+  .social-strip {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap:
+      0.8rem
+      1.6rem;
+
+    padding:
+      clamp(3rem, 9vw, 5rem)
+      0
+      0;
+  }
+
+  .social-strip a {
+    position: relative;
+
+    color:
+      rgb(255 255 255 / 62%);
+
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+
+    transition: color var(--transition-fast);
+  }
+
+  .social-strip a:hover,
+  .social-strip a:focus-visible {
+    color: var(--color-brand-gold);
+  }
+
+  /* FOOTER */
+
+  .connect-footer {
+    padding-top:
+      clamp(3rem, 8vw, 5rem);
+    text-align: center;
+  }
+
+  .footer-rule {
+    width: 1px;
+    height: 54px;
+    margin:
+      0
+      auto
+      2rem;
+
+    background:
+      linear-gradient(
+        to bottom,
+        var(--color-brand-gold),
+        transparent
+      );
+  }
+
+  .footer-message {
+    color:
+      rgb(255 255 255 / 60%);
+    font-family: var(--font-editorial);
+    font-size:
+      clamp(1.1rem, 4vw, 1.4rem);
+    font-style: italic;
+  }
+
+  .footer-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+
+    margin-top: 1.5rem;
+
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .footer-home span {
+    color: var(--color-brand-gold);
+    transition:
+      transform var(--transition-fast);
+  }
+
+  .footer-home:hover span {
+    transform: translateX(4px);
+  }
+
+  /* ACCESSIBILITY */
+
+  .connect-link:focus-visible,
+  .social-strip a:focus-visible,
+  .brand-link:focus-visible,
+  .footer-home:focus-visible {
+    outline:
+      2px solid var(--color-brand-gold);
+    outline-offset: 5px;
+  }
+
+  /* MOBILE */
+
+  @media (max-width: 520px) {
+    .connect-shell {
+      width:
+        min(
+          calc(100% - 2rem),
+          680px
+        );
+
+      padding-top: 1.75rem;
+    }
+
+    .connect-logo {
+      width: 48px;
+      height: 48px;
+    }
+
+    .connect-intro {
+      padding-top: 4.5rem;
+    }
+
+    .connect-intro h1 {
+      font-size:
+        clamp(3.5rem, 18vw, 5.5rem);
+    }
+
+    .connect-link {
+      min-height: 98px;
+      padding-inline: 0.75rem;
+    }
+
+    .connect-link--featured {
+      min-height: 118px;
+      padding-inline: 1.25rem;
+    }
+
+    .link-arrow {
+      width: 40px;
+      height: 40px;
+      flex-basis: 40px;
+    }
+
+    .link-number {
+      right: 4.4rem;
+    }
+  }
+</style>

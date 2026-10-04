@@ -1,6 +1,7 @@
 import { siteSettings } from "./siteSettings";
 import { navigation } from "./navigation";
 import { homepage } from "./homepage";
+import { connectPage } from "./connectPage";
 import { imageTextSection } from "./objects/imageTextSection";
 import { location } from "./location";
 import { service } from "./service";
@@ -42,6 +43,7 @@ export const schemaTypes = [
     siteSettings,
     navigation,
     homepage,
+    connectPage,
     location,
     service,
     ministry,
