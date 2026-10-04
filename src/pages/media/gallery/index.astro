@@ -1,0 +1,848 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { sanityClient } from "sanity:client";
+import groq from "groq";
+import imageUrlBuilder from "@sanity/image-url";
+
+const galleries = await sanityClient.fetch(
+  groq`
+    *[
+      _type == "gallery" &&
+      defined(slug.current)
+    ] | order(date desc) {
+      _id,
+      title,
+      "slug": slug.current,
+      date,
+      category,
+      description,
+      featured,
+
+      coverImage {
+        asset,
+        hotspot,
+        crop,
+        alt
+      },
+
+      "itemCount": count(items)
+    }
+  `
+);
+
+const builder = imageUrlBuilder(sanityClient);
+
+function imageUrl(image: any, width = 1200, height = 800) {
+  if (!image?.asset) return "";
+
+  return builder
+    .image(image)
+    .width(width)
+    .height(height)
+    .fit("crop")
+    .auto("format")
+    .quality(85)
+    .url();
+}
+
+function formatDate(date?: string) {
+  if (!date) return "";
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T00:00:00Z`));
+}
+
+const categoryLabels: Record<string, string> = {
+  "sunday-worship": "Sunday Worship",
+  events: "Events",
+  "youth-pensa": "Youth & PENSA",
+  community: "Community",
+  prayer: "Prayer",
+  outreach: "Outreach",
+  other: "Other",
+};
+
+const featuredGallery =
+  galleries.find((gallery: any) => gallery.featured) ??
+  galleries[0];
+
+const remainingGalleries = featuredGallery
+  ? galleries.filter(
+      (gallery: any) => gallery._id !== featuredGallery._id
+    )
+  : [];
+
+const categories: string[] = Array.from(
+  new Set<string>(
+    galleries
+      .map((gallery: any) => gallery.category)
+      .filter(
+        (category: unknown): category is string =>
+          typeof category === "string" &&
+          category.length > 0
+      )
+  )
+);
+---
+
+<BaseLayout
+  title="Gallery | PIWC Philadelphia"
+  description="Experience life at PIWC Philadelphia through moments of worship, community, prayer, fellowship and faith."
+>
+  <main class="gallery-page">
+
+    <!-- HERO -->
+    <section class="gallery-hero">
+      <div class="gallery-container">
+        <p class="eyebrow">MEDIA / GALLERY</p>
+
+        <div class="hero-grid">
+          <h1>
+            LIFE AT
+            <span>PIWC.</span>
+          </h1>
+
+          <div class="hero-copy">
+            <p>
+              A glimpse into worship, community, faith and life
+              at PIWC Philadelphia.
+            </p>
+
+            <span class="hero-line"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {
+      galleries.length === 0 ? (
+        <section class="empty-state gallery-container">
+          <p class="eyebrow">GALLERY</p>
+          <h2>Moments are coming soon.</h2>
+          <p>
+            Check back soon for photos and videos from life at
+            PIWC Philadelphia.
+          </p>
+        </section>
+      ) : (
+        <>
+          <!-- FEATURED GALLERY -->
+          {featuredGallery && (
+            <section class="featured-section gallery-container">
+              <div class="section-heading">
+                <p class="eyebrow">FEATURED MOMENT</p>
+              </div>
+
+              <a
+                class="featured-gallery"
+                href={`/media/gallery/${featuredGallery.slug}`}
+              >
+                <div class="featured-image">
+                  <img
+                    src={imageUrl(
+                      featuredGallery.coverImage,
+                      1800,
+                      1050
+                    )}
+                    alt={
+                      featuredGallery.coverImage?.alt ||
+                      featuredGallery.title
+                    }
+                    width="1800"
+                    height="1050"
+                    loading="eager"
+                    fetchpriority="high"
+                  />
+
+                  <div class="featured-overlay"></div>
+
+                  <div class="featured-content">
+                    <div>
+                      <p class="gallery-category">
+                        {
+                          categoryLabels[
+                            featuredGallery.category
+                          ] ?? featuredGallery.category
+                        }
+                      </p>
+
+                      <h2>{featuredGallery.title}</h2>
+                    </div>
+
+                    <div class="featured-meta">
+                      <span>
+                        {formatDate(featuredGallery.date)}
+                      </span>
+
+                      {featuredGallery.itemCount > 0 && (
+                        <span>
+                          {featuredGallery.itemCount}{" "}
+                          {featuredGallery.itemCount === 1
+                            ? "Moment"
+                            : "Moments"}
+                        </span>
+                      )}
+
+                      <span class="view-gallery">
+                        VIEW GALLERY <span aria-hidden="true">→</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </section>
+          )}
+
+          <!-- ALL GALLERIES -->
+          <section class="explore-section">
+            <div class="gallery-container">
+
+              <div class="explore-heading">
+                <div>
+                  <p class="eyebrow">EXPLORE</p>
+                  <h2>
+                    OUR <span>COMMUNITY.</span>
+                  </h2>
+                </div>
+
+                <p class="explore-copy">
+                  From Sunday worship to community gatherings,
+                  discover moments that tell the story of PIWC.
+                </p>
+              </div>
+
+              <!-- FILTERS -->
+              <div
+                class="gallery-filters"
+                aria-label="Filter galleries"
+              >
+                <button
+                  class="filter-button active"
+                  type="button"
+                  data-filter="all"
+                  aria-pressed="true"
+                >
+                  All
+                </button>
+
+                {
+                  categories.map((category: string) => (
+                    <button
+                      class="filter-button"
+                      type="button"
+                      data-filter={category}
+                      aria-pressed="false"
+                    >
+                      {categoryLabels[category] ?? category}
+                    </button>
+                  ))
+                }
+              </div>
+
+              {
+                remainingGalleries.length > 0 ? (
+                  <div class="gallery-grid" data-gallery-grid>
+                    {remainingGalleries.map(
+                      (gallery: any, index: number) => (
+                        <article
+                          class:list={[
+                            "gallery-card",
+                            index % 5 === 0 && "gallery-card--large",
+                          ]}
+                          data-gallery-card
+                          data-category={gallery.category}
+                        >
+                          <a
+                            href={`/media/gallery/${gallery.slug}`}
+                            aria-label={`View ${gallery.title} gallery`}
+                          >
+                            <div class="card-image">
+                              <img
+                                src={imageUrl(
+                                  gallery.coverImage,
+                                  index % 5 === 0 ? 1200 : 850,
+                                  index % 5 === 0 ? 900 : 700
+                                )}
+                                alt={
+                                  gallery.coverImage?.alt ||
+                                  gallery.title
+                                }
+                                width={
+                                  index % 5 === 0 ? "1200" : "850"
+                                }
+                                height={
+                                  index % 5 === 0 ? "900" : "700"
+                                }
+                                loading="lazy"
+                              />
+
+                              <span
+                                class="card-arrow"
+                                aria-hidden="true"
+                              >
+                                ↗
+                              </span>
+                            </div>
+
+                            <div class="card-info">
+                              <div>
+                                <p class="gallery-category">
+                                  {
+                                    categoryLabels[
+                                      gallery.category
+                                    ] ?? gallery.category
+                                  }
+                                </p>
+
+                                <h3>{gallery.title}</h3>
+                              </div>
+
+                              <div class="card-meta">
+                                <span>
+                                  {formatDate(gallery.date)}
+                                </span>
+
+                                {gallery.itemCount > 0 && (
+                                  <span>
+                                    {gallery.itemCount}{" "}
+                                    {gallery.itemCount === 1
+                                      ? "Moment"
+                                      : "Moments"}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </a>
+                        </article>
+                      )
+                    )}
+                  </div>
+                ) : (
+                  <div class="only-featured">
+                    <p>
+                      More moments from PIWC are coming soon.
+                    </p>
+                  </div>
+                )
+              }
+            </div>
+          </section>
+        </>
+      )
+    }
+  </main>
+</BaseLayout>
+
+<script>
+  const buttons =
+    document.querySelectorAll<HTMLButtonElement>(
+      "[data-filter]"
+    );
+
+  const cards =
+    document.querySelectorAll<HTMLElement>(
+      "[data-gallery-card]"
+    );
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const filter = button.dataset.filter ?? "all";
+
+      buttons.forEach((item) => {
+        const active = item === button;
+
+        item.classList.toggle("active", active);
+        item.setAttribute(
+          "aria-pressed",
+          active ? "true" : "false"
+        );
+      });
+
+      cards.forEach((card) => {
+        const show =
+          filter === "all" ||
+          card.dataset.category === filter;
+
+        card.hidden = !show;
+      });
+    });
+  });
+</script>
+
+<style>
+  .gallery-page {
+    background: var(--color-brand-ivory);
+    color: var(--color-text-primary);
+    overflow: hidden;
+  }
+
+  .gallery-container {
+    width: min(
+      calc(100% - (var(--page-padding) * 2)),
+      var(--container-width)
+    );
+    margin-inline: auto;
+  }
+
+  .eyebrow {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  /* HERO */
+
+  .gallery-hero {
+    padding:
+      clamp(10rem, 16vw, 14rem)
+      0
+      clamp(5rem, 9vw, 9rem);
+    background: var(--color-brand-navy);
+    color: var(--color-brand-white);
+  }
+
+  .gallery-hero .eyebrow {
+    color: var(--color-brand-gold);
+    margin-bottom: clamp(2.5rem, 6vw, 5rem);
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.45fr);
+    gap: clamp(3rem, 8vw, 8rem);
+    align-items: end;
+  }
+
+  .hero-grid h1 {
+    margin: 0;
+    max-width: 900px;
+    font-family: var(--font-display);
+    font-size: clamp(4rem, 10vw, 9.5rem);
+    font-weight: 800;
+    line-height: 0.82;
+    letter-spacing: -0.065em;
+  }
+
+  .hero-grid h1 span {
+    display: block;
+    color: var(--color-brand-gold);
+    font-family: var(--font-editorial);
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: -0.04em;
+  }
+
+  .hero-copy {
+    padding-bottom: 0.5rem;
+  }
+
+  .hero-copy p {
+    margin: 0;
+    max-width: 330px;
+    font-size: clamp(1rem, 1.5vw, 1.25rem);
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.78);
+  }
+
+  .hero-line {
+    display: block;
+    width: 100%;
+    height: 1px;
+    margin-top: 2rem;
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  /* FEATURED */
+
+  .featured-section {
+    padding-block: var(--section-space-md);
+  }
+
+  .section-heading {
+    margin-bottom: 1.5rem;
+  }
+
+  .featured-gallery {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .featured-image {
+    position: relative;
+    min-height: min(72vh, 850px);
+    overflow: hidden;
+    background: var(--color-brand-navy);
+  }
+
+  .featured-image > img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 900ms ease;
+  }
+
+  .featured-gallery:hover .featured-image > img {
+    transform: scale(1.025);
+  }
+
+  .featured-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(7, 26, 51, 0.04) 20%,
+        rgba(7, 26, 51, 0.82) 100%
+      );
+  }
+
+  .featured-content {
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    gap: 3rem;
+    align-items: end;
+    padding: clamp(1.5rem, 4vw, 4rem);
+    color: white;
+  }
+
+  .gallery-category {
+    margin: 0 0 0.65rem;
+    color: var(--color-brand-gold);
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .featured-content h2 {
+    margin: 0;
+    max-width: 850px;
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 5vw, 5.5rem);
+    line-height: 0.95;
+    letter-spacing: -0.045em;
+  }
+
+  .featured-meta {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: right;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .view-gallery {
+    margin-top: 1rem;
+    color: var(--color-brand-gold);
+    font-weight: 700;
+  }
+
+  /* EXPLORE */
+
+  .explore-section {
+    padding:
+      var(--section-space-md)
+      0
+      var(--section-space-lg);
+    background: white;
+  }
+
+  .explore-heading {
+    display: grid;
+    grid-template-columns: 1fr minmax(250px, 390px);
+    gap: 4rem;
+    align-items: end;
+  }
+
+  .explore-heading .eyebrow {
+    margin-bottom: 1rem;
+    color: var(--color-text-muted);
+  }
+
+  .explore-heading h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 7vw, 7rem);
+    line-height: 0.9;
+    letter-spacing: -0.055em;
+  }
+
+  .explore-heading h2 span {
+    display: block;
+    color: var(--color-brand-gold-dark, #b8860b);
+    font-family: var(--font-editorial);
+    font-weight: 400;
+    font-style: italic;
+  }
+
+  .explore-copy {
+    margin: 0;
+    padding-bottom: 0.6rem;
+    line-height: 1.7;
+    color: var(--color-text-muted);
+  }
+
+  /* FILTERS */
+
+  .gallery-filters {
+    display: flex;
+    gap: 0.65rem;
+    margin: clamp(3rem, 6vw, 5rem) 0;
+    padding-bottom: 0.75rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .gallery-filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-button {
+    flex: 0 0 auto;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 0.8rem 1.2rem;
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+      background var(--transition-fast),
+      color var(--transition-fast),
+      border-color var(--transition-fast);
+  }
+
+  .filter-button:hover,
+  .filter-button.active {
+    border-color: var(--color-brand-navy);
+    background: var(--color-brand-navy);
+    color: white;
+  }
+
+  /* GRID */
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: clamp(2rem, 4vw, 4rem) clamp(1.25rem, 3vw, 2.5rem);
+  }
+
+  .gallery-card {
+    grid-column: span 6;
+  }
+
+  .gallery-card--large {
+    grid-column: span 7;
+  }
+
+  .gallery-card--large + .gallery-card {
+    grid-column: span 5;
+    padding-top: clamp(3rem, 9vw, 8rem);
+  }
+
+  .gallery-card[hidden] {
+    display: none;
+  }
+
+  .gallery-card a {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .card-image {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1.22 / 1;
+    background: var(--color-brand-stone);
+  }
+
+  .gallery-card--large .card-image {
+    aspect-ratio: 1.15 / 1;
+  }
+
+  .card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 700ms ease;
+  }
+
+  .gallery-card:hover .card-image img {
+    transform: scale(1.035);
+  }
+
+  .card-arrow {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--color-brand-gold);
+    color: var(--color-brand-navy);
+    font-size: 1.25rem;
+    transform: translateY(0.4rem);
+    opacity: 0;
+    transition:
+      opacity var(--transition-base),
+      transform var(--transition-base);
+  }
+
+  .gallery-card:hover .card-arrow {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .card-info {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    padding-top: 1.25rem;
+  }
+
+  .card-info h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.35rem, 2.4vw, 2.2rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+
+  .card-meta {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    text-align: right;
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    line-height: 1.4;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* EMPTY STATES */
+
+  .empty-state {
+    padding-block: var(--section-space-lg);
+  }
+
+  .empty-state h2 {
+    margin: 1rem 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 6vw, 5rem);
+  }
+
+  .empty-state > p:last-child,
+  .only-featured {
+    color: var(--color-text-muted);
+  }
+
+  .only-featured {
+    padding: 3rem 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* RESPONSIVE */
+
+  @media (max-width: 850px) {
+    .hero-grid,
+    .explore-heading {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .hero-grid h1 {
+      font-size: clamp(4rem, 19vw, 7rem);
+    }
+
+    .featured-image {
+      min-height: 68vh;
+    }
+
+    .featured-content {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .featured-meta {
+      text-align: left;
+    }
+
+    .gallery-card,
+    .gallery-card--large,
+    .gallery-card--large + .gallery-card {
+      grid-column: span 12;
+      padding-top: 0;
+    }
+
+    .card-info {
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .card-meta {
+      flex-direction: row;
+      gap: 1rem;
+      text-align: left;
+    }
+
+    .card-arrow {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .gallery-hero {
+      padding-top: 8.5rem;
+    }
+
+    .featured-image {
+      min-height: 560px;
+    }
+
+    .featured-content h2 {
+      font-size: clamp(2.25rem, 11vw, 3.5rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .featured-image > img,
+    .card-image img,
+    .card-arrow,
+    .filter-button {
+      transition: none;
+    }
+
+    .featured-gallery:hover .featured-image > img,
+    .gallery-card:hover .card-image img {
+      transform: none;
+    }
+  }
+</style>

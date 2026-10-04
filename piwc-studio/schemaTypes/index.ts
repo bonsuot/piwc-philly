@@ -9,6 +9,7 @@ import { sermon } from "./sermon";
 import { sermonSeries } from "./sermonSeries";
 import { event } from "./event";
 import { value } from "./value";
+import { gallery } from "./gallery";
 import { valuesSection } from "./objects/valuesSection";
 import {belief} from "./belief";
 import { beliefsSection } from "./objects/beliefsSection";
@@ -32,6 +33,8 @@ import {person} from "./person";
 import {peopleGridSection} from "./objects/peopleGridSection";
 import { livestreamSection } from "./objects/livestreamSection";
 import { seriesGridSection } from "./objects/seriesGridSection";
+import { galleryItem } from "./objects/galleryItem";
+
 import { seo } from "./objects/seo";
 
 export const schemaTypes = [
@@ -44,7 +47,6 @@ export const schemaTypes = [
     ministry,
     sermon,
     sermonSeries,
-    event,
     value,
     valuesSection,
     belief,
@@ -68,6 +70,9 @@ export const schemaTypes = [
     locationSection,
     ministryGridSection,
     eventGridSection,
+    event,
+    galleryItem,
+    gallery,
     sermonGridSection,
     prayerRequestSection,
     livestreamSection,

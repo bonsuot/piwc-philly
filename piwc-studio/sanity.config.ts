@@ -107,6 +107,17 @@ S.listItem()
   ),
 
   S.listItem()
+  .title("Galleries")
+  .schemaType("gallery")
+  .child(
+    S.documentTypeList("gallery")
+      .title("Galleries")
+      .defaultOrdering([
+        { field: "date", direction: "desc" },
+      ])
+  ),
+
+  S.listItem()
   .title("Events")
   .schemaType("event")
   .child(
