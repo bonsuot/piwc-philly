@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { createImageUrlBuilder } from "@sanity/image-url";
 
 import Header from "../components/layout/Header.astro";
 import Footer from "../components/layout/Footer.astro";
@@ -19,6 +20,29 @@ interface Props {
   showSiteAlert?: boolean;
 }
 
+const builder = createImageUrlBuilder(sanityClient);
+const seoSettings = await sanityClient.fetch(
+  groq`
+    *[_id == "siteSettings"][0] {
+      defaultSeo {
+        metaTitle,
+        metaDescription,
+        shareImage
+      }
+    }
+  `
+);
+
+const defaultShareImage = seoSettings?.defaultSeo?.shareImage
+  ? builder
+      .image(seoSettings.defaultSeo.shareImage)
+      .width(1200)
+      .height(630)
+      .fit("crop")
+      .auto("format")
+      .url()
+  : undefined;
+
 const {
   title = "PIWC Philadelphia",
   description = "A Place of Love, Healing & Provision.",
@@ -36,10 +60,12 @@ const canonicalUrl =
     ? new URL(Astro.url.pathname, Astro.site).toString()
     : Astro.url.toString());
 
+const requestedSocialImage = image || defaultShareImage;
+
 const socialImage =
-  image && Astro.site
-    ? new URL(image, Astro.site).toString()
-    : image;
+  requestedSocialImage && Astro.site
+    ? new URL(requestedSocialImage, Astro.site).toString()
+    : requestedSocialImage;
 
 
 const siteAlert = await sanityClient.fetch(
@@ -154,6 +180,25 @@ const siteAlert = await sanityClient.fetch(
           property="og:image"
           content={socialImage}
         />
+      )
+    }
+
+    {
+      socialImage && (
+        <>
+          <meta
+            property="og:image:width"
+            content="1200"
+          />
+          <meta
+            property="og:image:height"
+            content="630"
+          />
+          <meta
+            property="og:image:alt"
+            content="PIWC Philadelphia"
+          />
+        </>
       )
     }
 
