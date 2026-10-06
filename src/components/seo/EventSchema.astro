@@ -1,0 +1,165 @@
+---
+interface Props {
+  event: any;
+  imageUrl?: string;
+  slug: string;
+}
+
+const { event, imageUrl, slug } = Astro.props;
+
+function timeTo24Hour(time?: string) {
+  if (!time) return null;
+
+  const match = time
+    .trim()
+    .match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+
+  if (!match) return null;
+
+  let hour = Number(match[1]);
+  const minute = match[2];
+  const period = match[3].toUpperCase();
+
+  if (period === "PM" && hour !== 12) hour += 12;
+  if (period === "AM" && hour === 12) hour = 0;
+
+  return `${String(hour).padStart(2, "0")}:${minute}:00`;
+}
+
+function createDateTime(date?: string, time?: string) {
+  if (!date) return undefined;
+
+  const convertedTime = timeTo24Hour(time);
+
+  return convertedTime
+    ? `${date}T${convertedTime}`
+    : date;
+}
+
+const startDate = createDateTime(
+  event.startDate,
+  event.startTime
+);
+
+const endDate = event.endDate
+  ? createDateTime(
+      event.endDate,
+      event.endTime
+    )
+  : event.endTime
+    ? createDateTime(
+        event.startDate,
+        event.endTime
+      )
+    : undefined;
+
+const eventUrl =
+  `https://piwcphilly.com/events/${slug}`;
+
+const hasStructuredLocation =
+  event.location &&
+  (
+    event.location.street ||
+    event.location.city ||
+    event.location.state ||
+    event.location.zip
+  );
+
+let location;
+
+if (event.customLocation) {
+  location = {
+    "@type": "Place",
+    name: event.customLocation,
+  };
+} else if (event.location) {
+  location = {
+    "@type": "Place",
+    name:
+      event.location.name ??
+      "PIWC Philadelphia",
+
+    ...(hasStructuredLocation && {
+      address: {
+        "@type": "PostalAddress",
+
+        ...(event.location.street && {
+          streetAddress:
+            event.location.street,
+        }),
+
+        ...(event.location.city && {
+          addressLocality:
+            event.location.city,
+        }),
+
+        ...(event.location.state && {
+          addressRegion:
+            event.location.state,
+        }),
+
+        ...(event.location.zip && {
+          postalCode:
+            event.location.zip,
+        }),
+
+        addressCountry: "US",
+      },
+    }),
+  };
+}
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "Event",
+
+  name: event.title,
+
+  startDate,
+
+  ...(endDate && {
+    endDate,
+  }),
+
+  ...(event.shortDescription ||
+  event.description
+    ? {
+        description:
+          event.shortDescription ??
+          event.description,
+      }
+    : {}),
+
+  ...(imageUrl && {
+    image: [imageUrl],
+  }),
+
+  ...(location && {
+    location,
+  }),
+
+  url: eventUrl,
+
+  organizer: {
+    "@type": "Organization",
+    "@id":
+      "https://piwcphilly.com/#organization",
+    name: "PIWC Philadelphia",
+    url: "https://piwcphilly.com",
+  },
+
+  ...(event.registrationUrl && {
+    offers: {
+      "@type": "Offer",
+      url: event.registrationUrl,
+      availability:
+        "https://schema.org/InStock",
+    },
+  }),
+};
+---
+
+<script
+  type="application/ld+json"
+  set:html={JSON.stringify(schema)}
+></script>

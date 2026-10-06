@@ -1,9 +1,10 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PageSections from "../components/PageSections.astro";
+import BreadcrumbSchema from "../components/seo/BreadcrumbSchema.astro";
 import { sanityClient } from "sanity:client";
 import groq from "groq";
-import imageUrlBuilder from "@sanity/image-url";
+import { createImageUrlBuilder } from "@sanity/image-url";
 
 export async function getStaticPaths() {
   const pages = await sanityClient.fetch(
@@ -668,7 +669,7 @@ if (!page) {
   return Astro.redirect("/");
 }
 
-const builder = imageUrlBuilder(sanityClient);
+const builder = createImageUrlBuilder(sanityClient);
 
 const seoImage = page?.seo?.shareImage?.asset
   ? builder
@@ -680,6 +681,36 @@ const seoImage = page?.seo?.shareImage?.asset
       .quality(90)
       .url()
   : undefined;
+
+  const breadcrumbItems = [
+    {
+      name: "Home",
+      url: "/",
+    },
+  ];
+
+  if (page.parent?.parent) {
+    breadcrumbItems.push({
+      name: page.parent.parent.title,
+      url: `/${page.parent.parent.slug}`,
+    });
+  }
+
+  if (page.parent) {
+    const parentPath = page.parent.parent
+      ? `/${page.parent.parent.slug}/${page.parent.slug}`
+      : `/${page.parent.slug}`;
+
+    breadcrumbItems.push({
+      name: page.parent.title,
+      url: parentPath,
+    });
+  }
+
+  breadcrumbItems.push({
+    name: page.title,
+    url: `/${rawSlug}`,
+  });
 ---
 
 <BaseLayout
@@ -694,6 +725,7 @@ const seoImage = page?.seo?.shareImage?.asset
   image={seoImage}
   noIndex={page?.seo?.noIndex ?? false}
 >
+   <BreadcrumbSchema items={breadcrumbItems} />
   <main>
     <PageSections sections={page.sections} />
   </main>

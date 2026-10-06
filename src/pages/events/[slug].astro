@@ -1,6 +1,8 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import imageUrlBuilder from "@sanity/image-url";
+import EventSchema from "../../components/seo/EventSchema.astro";
+import BreadcrumbSchema from "../../components/seo/BreadcrumbSchema.astro";
+import { createImageUrlBuilder } from "@sanity/image-url";
 import { sanityClient } from "sanity:client";
 import groq from "groq";
 
@@ -65,7 +67,7 @@ if (!event) {
   return Astro.redirect("/events");
 }
 
-const builder = imageUrlBuilder(sanityClient);
+const builder = createImageUrlBuilder(sanityClient);
 
 const heroImage = event.image?.asset
   ? builder
@@ -102,6 +104,27 @@ const address = event.customLocation ??
     `Learn more about ${event.title} at PIWC Philadelphia.`
   }
 >
+  <EventSchema
+    event={event}
+    imageUrl={heroImage}
+    slug={slug!}
+  />
+  <BreadcrumbSchema
+    items={[
+      {
+        name: "Home",
+        url: "/",
+      },
+      {
+        name: "Events",
+        url: "/events",
+      },
+      {
+        name: event.title,
+        url: `/events/${slug}`,
+      },
+    ]}
+  />
   <main>
     <section class="event-hero">
       {heroImage && (

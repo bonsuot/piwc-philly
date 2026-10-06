@@ -5,6 +5,7 @@ import { createImageUrlBuilder } from "@sanity/image-url";
 import Header from "../components/layout/Header.astro";
 import Footer from "../components/layout/Footer.astro";
 import SiteAlert from "../components/layout/SiteAlert.astro";
+import OrganizationSchema from "../components/seo/OrganizationSchema.astro";
 
 import { sanityClient } from "sanity:client";
 import groq from "groq";
@@ -114,6 +115,8 @@ const siteAlert = await sanityClient.fetch(
     />
 
     <title>{title}</title>
+
+    <OrganizationSchema />
 
     <!-- Favicons -->
     <link rel="icon" href="/favicon.ico" sizes="any" />

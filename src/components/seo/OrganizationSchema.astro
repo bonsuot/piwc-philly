@@ -1,0 +1,76 @@
+---
+import { sanityClient } from "sanity:client";
+import groq from "groq";
+import { createImageUrlBuilder } from "@sanity/image-url";
+
+const settings = await sanityClient.fetch(
+  groq`
+    *[_id == "siteSettings"][0] {
+      churchName,
+      description,
+      email,
+      phone,
+
+      logo {
+        asset,
+        hotspot,
+        crop
+      },
+
+      socialLinks[] {
+        url
+      }
+    }
+  `
+);
+
+const builder = createImageUrlBuilder(sanityClient);
+
+const logoUrl = settings?.logo?.asset
+  ? builder
+      .image(settings.logo)
+      .width(600)
+      .auto("format")
+      .url()
+  : undefined;
+
+const sameAs = (settings?.socialLinks ?? [])
+  .map((social: any) => social?.url)
+  .filter(Boolean);
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "Church",
+
+  "@id": "https://piwcphilly.com/#organization",
+
+  name: settings?.churchName ?? "PIWC Philadelphia",
+
+  url: "https://piwcphilly.com",
+
+  ...(settings?.description && {
+    description: settings.description,
+  }),
+
+  ...(logoUrl && {
+    logo: logoUrl,
+  }),
+
+  ...(settings?.email && {
+    email: settings.email,
+  }),
+
+  ...(settings?.phone && {
+    telephone: settings.phone,
+  }),
+
+  ...(sameAs.length > 0 && {
+    sameAs,
+  }),
+};
+---
+
+<script
+  type="application/ld+json"
+  set:html={JSON.stringify(schema)}
+></script>
