@@ -1,0 +1,530 @@
+---
+import { createImageUrlBuilder } from "@sanity/image-url";
+import { sanityClient } from "sanity:client";
+
+const { section } = Astro.props;
+
+const gallery =
+  section?.selectionMode === "latest"
+    ? section?.latestGallery
+    : section?.featuredGallery ?? section?.latestGallery;
+
+const builder = createImageUrlBuilder(sanityClient);
+
+function imageUrl(
+  image: any,
+  width = 1400,
+  height = 1000
+) {
+  if (!image?.asset) return null;
+
+  return builder
+    .image(image)
+    .width(width)
+    .height(height)
+    .fit("crop")
+    .auto("format")
+    .quality(88)
+    .url();
+}
+
+const galleryUrl = gallery?.slug
+  ? `/media/gallery/${gallery.slug}`
+  : "/media/gallery";
+
+const cover = imageUrl(gallery?.coverImage, 1500, 1050);
+
+const photos =
+  gallery?.photos
+    ?.map((photo: any) => ({
+      ...photo,
+      url: imageUrl(photo.image, 1000, 800),
+    }))
+    .filter((photo: any) => photo.url) ?? [];
+
+const secondaryPhoto = photos[0] ?? null;
+const tertiaryPhoto = photos[1] ?? null;
+
+const formattedDate = gallery?.date
+  ? new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(`${gallery.date}T00:00:00Z`))
+  : null;
+
+const categoryLabels: Record<string, string> = {
+  "sunday-worship": "Sunday Worship",
+  events: "Events",
+  "youth-pensa": "Youth & PENSA",
+  community: "Community",
+  prayer: "Prayer",
+  outreach: "Outreach",
+  other: "Life at PIWC",
+};
+
+const categoryLabel =
+  categoryLabels[gallery?.category] ??
+  gallery?.category ??
+  "Life at PIWC";
+---
+
+{
+  gallery && cover && (
+    <section class="gallery-showcase">
+      <div class="container">
+
+        <header class="section-header">
+          <div>
+            {section?.eyebrow && (
+              <p class="eyebrow">{section.eyebrow}</p>
+            )}
+
+            <h2>
+              {section?.heading ?? "Faith. Family. Community."}
+            </h2>
+          </div>
+
+          {section?.description && (
+            <p class="intro">{section.description}</p>
+          )}
+        </header>
+
+        <div class="editorial-grid">
+
+          <a
+            class="primary-photo photo"
+            href={galleryUrl}
+            aria-label={`View ${gallery.title} gallery`}
+          >
+            <img
+              src={cover}
+              alt={gallery.coverImage?.alt ?? gallery.title}
+              loading="lazy"
+            />
+
+            <div class="photo-overlay"></div>
+
+            <span class="photo-label">
+              {categoryLabel}
+            </span>
+          </a>
+
+          <div class="gallery-story">
+            <div class="story-meta">
+              <span>{categoryLabel}</span>
+
+              {formattedDate && (
+                <span>{formattedDate}</span>
+              )}
+            </div>
+
+            <h3>{gallery.title}</h3>
+
+            {gallery?.description && (
+              <p class="gallery-description">
+                {gallery.description}
+              </p>
+            )}
+
+            <a class="gallery-link" href={galleryUrl}>
+              {section?.ctaLabel ?? "Explore the Gallery"}
+              <span aria-hidden="true">→</span>
+            </a>
+          </div>
+
+          {
+            secondaryPhoto && (
+              <a
+                class="secondary-photo photo"
+                href={galleryUrl}
+                aria-label={`Explore ${gallery.title}`}
+              >
+                <img
+                  src={secondaryPhoto.url}
+                  alt={
+                    secondaryPhoto.image?.alt ??
+                    secondaryPhoto.caption ??
+                    gallery.title
+                  }
+                  loading="lazy"
+                />
+              </a>
+            )
+          }
+
+          {
+            tertiaryPhoto && (
+              <a
+                class="tertiary-photo photo"
+                href={galleryUrl}
+                aria-label={`Explore ${gallery.title}`}
+              >
+                <img
+                  src={tertiaryPhoto.url}
+                  alt={
+                    tertiaryPhoto.image?.alt ??
+                    tertiaryPhoto.caption ??
+                    gallery.title
+                  }
+                  loading="lazy"
+                />
+
+                <span class="view-more">
+                  View moments
+                  <span aria-hidden="true">↗</span>
+                </span>
+              </a>
+            )
+          }
+
+        </div>
+
+        <footer class="section-footer">
+          <span class="footer-line"></span>
+
+          <a href="/media/gallery">
+            View All Galleries
+            <span aria-hidden="true">→</span>
+          </a>
+        </footer>
+
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .gallery-showcase {
+    overflow: hidden;
+    background: var(--color-brand-ivory);
+    color: var(--color-brand-charcoal);
+    padding:
+      var(--section-space-md)
+      0;
+  }
+
+  /* ------------------------------
+     HEADER
+  ------------------------------ */
+
+  .section-header {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(260px, 420px);
+    gap: 4rem;
+    align-items: end;
+    margin-bottom: clamp(4rem, 8vw, 8rem);
+  }
+
+  .eyebrow {
+    margin: 0 0 1.25rem;
+    color: var(--color-brand-gold-dark);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    max-width: 950px;
+    margin: 0;
+    font-size: clamp(3.5rem, 7vw, 7rem);
+    line-height: 0.88;
+    letter-spacing: -0.045em;
+    text-transform: uppercase;
+  }
+
+  .intro {
+    max-width: 400px;
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.75;
+    opacity: 0.7;
+  }
+
+  /* ------------------------------
+     EDITORIAL COMPOSITION
+  ------------------------------ */
+
+  .editorial-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: clamp(1rem, 2vw, 2rem);
+    align-items: start;
+  }
+
+  .photo {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    background: var(--color-brand-stone);
+  }
+
+  .photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 800ms ease;
+  }
+
+  .photo:hover img {
+    transform: scale(1.025);
+  }
+
+  /* Main photograph */
+
+  .primary-photo {
+    grid-column: 1 / span 7;
+    aspect-ratio: 4 / 3;
+  }
+
+  .photo-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        180deg,
+        transparent 55%,
+        rgb(3 14 28 / 55%) 100%
+      );
+  }
+
+  .photo-label {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    color: white;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* Gallery story */
+
+  .gallery-story {
+    grid-column: 9 / -1;
+    padding-top: clamp(2rem, 5vw, 5rem);
+  }
+
+  .story-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    margin-bottom: 1.5rem;
+    color: var(--color-brand-gold-dark);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .story-meta span + span {
+    color: inherit;
+    opacity: 0.65;
+  }
+
+  h3 {
+    max-width: 600px;
+    margin: 0;
+    font-size: clamp(2.5rem, 4.5vw, 5rem);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+  }
+
+  .gallery-description {
+    max-width: 480px;
+    margin: 1.75rem 0 0;
+    font-size: 1rem;
+    line-height: 1.75;
+    opacity: 0.7;
+  }
+
+  .gallery-link {
+    display: inline-flex;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 2rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 2px solid var(--color-brand-gold);
+    color: var(--color-brand-navy);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .gallery-link span {
+    transition: transform var(--transition-fast);
+  }
+
+  .gallery-link:hover span {
+    transform: translateX(5px);
+  }
+
+  /* Supporting photographs */
+
+  .secondary-photo {
+    grid-column: 2 / span 4;
+    margin-top: clamp(2rem, 6vw, 6rem);
+    aspect-ratio: 4 / 5;
+  }
+
+  .tertiary-photo {
+    grid-column: 7 / span 5;
+    margin-top: clamp(5rem, 11vw, 11rem);
+    aspect-ratio: 5 / 4;
+  }
+
+  .view-more {
+    position: absolute;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    background: var(--color-brand-navy);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .view-more > span {
+    color: var(--color-brand-gold);
+  }
+
+  /* ------------------------------
+     FOOTER
+  ------------------------------ */
+
+  .section-footer {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    margin-top: clamp(5rem, 9vw, 9rem);
+  }
+
+  .footer-line {
+    flex: 1;
+    height: 1px;
+    background: rgb(23 23 23 / 15%);
+  }
+
+  .section-footer a {
+    display: inline-flex;
+    gap: 1rem;
+    align-items: center;
+    color: var(--color-brand-navy);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .section-footer a span {
+    transition: transform var(--transition-fast);
+  }
+
+  .section-footer a:hover span {
+    transform: translateX(5px);
+  }
+
+  /* ------------------------------
+     RESPONSIVE
+  ------------------------------ */
+
+  @media (max-width: 950px) {
+    .section-header {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .editorial-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.5rem;
+    }
+
+    .primary-photo {
+      grid-column: 1 / -1;
+    }
+
+    .gallery-story {
+      grid-column: 1 / -1;
+      padding: 2rem 0;
+    }
+
+    .secondary-photo {
+      grid-column: 1;
+      margin-top: 0;
+    }
+
+    .tertiary-photo {
+      grid-column: 2;
+      margin-top: 4rem;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .gallery-showcase {
+      padding:
+        clamp(4.5rem, 16vw, 6rem)
+        0;
+    }
+
+    h2 {
+      font-size: clamp(3rem, 14vw, 4.5rem);
+    }
+
+    .editorial-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .primary-photo,
+    .gallery-story,
+    .secondary-photo,
+    .tertiary-photo {
+      grid-column: 1;
+    }
+
+    .primary-photo {
+      aspect-ratio: 4 / 3;
+    }
+
+    .gallery-story {
+      padding: 1.5rem 0 2rem;
+    }
+
+    .secondary-photo {
+      aspect-ratio: 4 / 5;
+    }
+
+    .tertiary-photo {
+      margin-top: 1.5rem;
+      aspect-ratio: 4 / 3;
+    }
+
+    .section-footer {
+      align-items: flex-start;
+    }
+
+    .footer-line {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .photo img,
+    .gallery-link span,
+    .section-footer a span {
+      transition: none;
+    }
+  }
+</style>

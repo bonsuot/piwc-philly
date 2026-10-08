@@ -1,37 +1,50 @@
 ---
-import imageUrlBuilder from "@sanity/image-url";
+import { createImageUrlBuilder } from "@sanity/image-url";
 import { sanityClient } from "sanity:client";
 
 const { section } = Astro.props;
 
-const builder = imageUrlBuilder(sanityClient);
+const builder = createImageUrlBuilder(sanityClient);
 
-const backgroundImage = section?.image?.asset
+const heroImage = section?.image?.asset
   ? builder
       .image(section.image)
       .width(2200)
-      .height(1300)
+      .height(1400)
       .fit("crop")
       .auto("format")
       .quality(90)
       .url()
   : null;
 
-const hasImage = section?.theme === "image" && backgroundImage;
+const imageLayout = section?.imageLayout ?? "background";
+
+const isBackground =
+  imageLayout === "background" &&
+  section?.theme === "image" &&
+  heroImage;
+
+const isSplit =
+  imageLayout === "split" &&
+  heroImage;
 ---
 
 <section
   class:list={[
     "page-hero",
     `theme-${section?.theme ?? "dark"}`,
-    { "has-image": hasImage },
+    {
+      "has-background": isBackground,
+      "is-split": isSplit,
+    },
   ]}
 >
   {
-    hasImage && (
+    isBackground && (
       <>
         <img
-          src={backgroundImage}
+          class="background-image"
+          src={heroImage}
           alt={section.image?.alt ?? ""}
         />
         <div class="overlay"></div>
@@ -39,20 +52,36 @@ const hasImage = section?.theme === "image" && backgroundImage;
     )
   }
 
-  <div class="container content">
-    {section?.eyebrow && (
-      <p class="eyebrow">{section.eyebrow}</p>
-    )}
+  <div class:list={["container", { "split-container": isSplit }]}>
+    <div class="content">
+      {section?.eyebrow && (
+        <p class="eyebrow">{section.eyebrow}</p>
+      )}
 
-    <h1>{section.heading}</h1>
+      <h1>{section.heading}</h1>
 
-    {section?.accentText && (
-      <p class="accent">{section.accentText}</p>
-    )}
+      {section?.accentText && (
+        <p class="accent">{section.accentText}</p>
+      )}
 
-    {section?.description && (
-      <p class="description">{section.description}</p>
-    )}
+      {section?.description && (
+        <p class="description">{section.description}</p>
+      )}
+    </div>
+
+    {
+      isSplit && (
+        <div class="split-image-wrap">
+          <img
+            class="split-image"
+            src={heroImage}
+            alt={section.image?.alt ?? ""}
+          />
+
+          <div class="image-accent" aria-hidden="true"></div>
+        </div>
+      )
+    }
   </div>
 </section>
 
@@ -69,28 +98,48 @@ const hasImage = section?.theme === "image" && backgroundImage;
       var(--section-space-md);
   }
 
-  .theme-dark {
+  /* --------------------------------
+     THEMES
+  -------------------------------- */
+
+  .theme-dark,
+  .theme-image {
     background: var(--color-brand-navy);
     color: white;
   }
 
-  .theme-light {
+  .theme-light,
+  .theme-ivory {
     background: var(--color-brand-ivory);
     color: var(--color-brand-charcoal);
   }
 
-  .has-image {
+  .theme-gray {
+    background: var(--color-brand-stone);
+    color: var(--color-brand-charcoal);
+  }
+
+  .theme-gold {
+    background: var(--color-brand-gold);
+    color: var(--color-brand-navy);
+  }
+
+  /* --------------------------------
+     BACKGROUND IMAGE
+  -------------------------------- */
+
+  .has-background {
     min-height: 85svh;
     color: white;
   }
 
-  .has-image > img,
+  .background-image,
   .overlay {
     position: absolute;
     inset: 0;
   }
 
-  .has-image > img {
+  .background-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -100,9 +149,20 @@ const hasImage = section?.theme === "image" && backgroundImage;
     background:
       linear-gradient(
         0deg,
-        rgb(3 14 28 / 80%) 0%,
-        rgb(3 14 28 / 15%) 70%
+        rgb(3 14 28 / 82%) 0%,
+        rgb(3 14 28 / 38%) 45%,
+        rgb(3 14 28 / 12%) 100%
       );
+  }
+
+  /* --------------------------------
+     CONTENT
+  -------------------------------- */
+
+  .container {
+    position: relative;
+    z-index: 2;
+    width: 100%;
   }
 
   .content {
@@ -111,6 +171,7 @@ const hasImage = section?.theme === "image" && backgroundImage;
   }
 
   .eyebrow {
+    margin: 0;
     color: var(--color-brand-gold);
     font-size: 0.7rem;
     font-weight: 800;
@@ -120,21 +181,153 @@ const hasImage = section?.theme === "image" && backgroundImage;
 
   h1 {
     max-width: 1150px;
-    margin-top: 1.25rem;
+    margin: 1.25rem 0 0;
     font-size: clamp(4rem, 10vw, 9rem);
+    line-height: 0.88;
+    letter-spacing: -0.045em;
     text-transform: uppercase;
   }
 
   .accent {
+    margin: 0.15em 0 0;
     font-family: var(--font-editorial);
     font-size: clamp(2.5rem, 5vw, 5rem);
     font-style: italic;
+    line-height: 1;
   }
 
   .description {
     max-width: 620px;
-    margin-top: 2rem;
+    margin: 2rem 0 0;
     font-size: 1.1rem;
-    opacity: 0.75;
+    line-height: 1.7;
+    opacity: 0.78;
+  }
+
+  /* --------------------------------
+     SPLIT HERO
+  -------------------------------- */
+
+  .is-split {
+    min-height: min(850px, 88svh);
+    align-items: center;
+    padding:
+      clamp(9rem, 13vw, 12rem)
+      0
+      clamp(5rem, 8vw, 8rem);
+  }
+
+  .split-container {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 0.9fr)
+      minmax(420px, 1.1fr);
+    gap: clamp(3rem, 7vw, 8rem);
+    align-items: center;
+  }
+
+  .is-split .content {
+    max-width: 680px;
+  }
+
+  .is-split h1 {
+    max-width: 720px;
+    font-size: clamp(4rem, 7.5vw, 8rem);
+  }
+
+  .is-split .accent {
+    color: var(--color-brand-gold);
+    font-size: clamp(3rem, 5.5vw, 6rem);
+  }
+
+  .split-image-wrap {
+    position: relative;
+    min-height: clamp(420px, 48vw, 650px);
+  }
+
+  .split-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .image-accent {
+    position: absolute;
+    right: -1.25rem;
+    bottom: -1.25rem;
+    width: clamp(80px, 10vw, 150px);
+    height: clamp(80px, 10vw, 150px);
+    border-right: 2px solid var(--color-brand-gold);
+    border-bottom: 2px solid var(--color-brand-gold);
+    pointer-events: none;
+  }
+
+  /* --------------------------------
+     MOBILE
+  -------------------------------- */
+
+  @media (max-width: 900px) {
+    .page-hero {
+      min-height: auto;
+      padding:
+        clamp(8rem, 24vw, 11rem)
+        0
+        clamp(4rem, 12vw, 6rem);
+    }
+
+    .split-container {
+      grid-template-columns: 1fr;
+      gap: 3rem;
+    }
+
+    .is-split {
+      min-height: auto;
+      align-items: initial;
+    }
+
+    .is-split h1,
+    h1 {
+      font-size: clamp(3.5rem, 15vw, 6rem);
+    }
+
+    .is-split .accent {
+      font-size: clamp(2.75rem, 12vw, 4.5rem);
+    }
+
+    .split-image-wrap {
+      min-height: 0;
+      aspect-ratio: 4 / 5;
+    }
+
+    .image-accent {
+      right: -0.5rem;
+      bottom: -0.75rem;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .is-split h1,
+    h1 {
+      font-size: clamp(3rem, 14vw, 4.5rem);
+    }
+
+    .description {
+      margin-top: 1.5rem;
+      font-size: 1rem;
+    }
+
+    .split-image-wrap {
+      aspect-ratio: 4 / 4.75;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .page-hero *,
+    .page-hero *::before,
+    .page-hero *::after {
+      scroll-behavior: auto !important;
+    }
   }
 </style>

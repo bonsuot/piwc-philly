@@ -39,6 +39,23 @@ export const pageHero = defineType({
     }),
 
     defineField({
+      name: "imageLayout",
+      title: "Image Layout",
+      type: "string",
+      description:
+        "Choose whether the image fills the hero background or appears beside the content.",
+      initialValue: "background",
+      options: {
+        layout: "radio",
+        list: [
+          { title: "Background", value: "background" },
+          { title: "Split", value: "split" },
+        ],
+      },
+      hidden: ({ parent }) => !parent?.image,
+    }),
+
+    defineField({
       name: "theme",
       title: "Theme",
       type: "string",

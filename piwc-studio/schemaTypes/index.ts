@@ -15,6 +15,7 @@ import { valuesSection } from "./objects/valuesSection";
 import {belief} from "./belief";
 import { beliefsSection } from "./objects/beliefsSection";
 
+
 import { link } from "./objects/link";
 import { cta } from "./objects/cta";
 import { accessibleImage } from "./objects/accessibleImage";
@@ -35,6 +36,12 @@ import {peopleGridSection} from "./objects/peopleGridSection";
 import { livestreamSection } from "./objects/livestreamSection";
 import { seriesGridSection } from "./objects/seriesGridSection";
 import { galleryItem } from "./objects/galleryItem";
+import { mediaLatestMessageSection } from "./objects/mediaLatestMessageSection";
+import { mediaSeriesShowcaseSection } from "./objects/mediaSeriesShowcaseSection";
+import { mediaGalleryShowcaseSection } from "./objects/mediaGalleryShowcaseSection";
+import { mediaConnectSection } from "./objects/mediaConnectSection";
+import { givingMethod } from "./objects/givingMethod";
+import { givingMethodsSection } from "./objects/givingMethodsSection";
 
 import { seo } from "./objects/seo";
 
@@ -79,5 +86,11 @@ export const schemaTypes = [
     prayerRequestSection,
     livestreamSection,
     seriesGridSection,
+    mediaLatestMessageSection,
+    mediaSeriesShowcaseSection,
+    mediaGalleryShowcaseSection,
+    mediaConnectSection,
+    givingMethod,
+    givingMethodsSection,
     seo,
 ];

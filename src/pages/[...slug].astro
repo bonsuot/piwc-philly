@@ -410,6 +410,208 @@ const page = await sanityClient.fetch(
           }
         },
 
+        _type == "mediaLatestMessageSection" => {
+          eyebrow,
+          heading,
+          description,
+          selectionMode,
+          ctaLabel,
+
+          "latestSermon": *[
+            _type == "sermon"
+          ] | order(date desc)[0] {
+            _id,
+            title,
+            "slug": slug.current,
+            date,
+            speakerName,
+            scripture,
+            shortDescription,
+            videoUrl,
+            audioUrl,
+
+            series-> {
+              title,
+              "slug": slug.current
+            },
+
+            thumbnail {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          },
+
+          "latestFeaturedSermon": *[
+            _type == "sermon" &&
+            featured == true
+          ] | order(date desc)[0] {
+            _id,
+            title,
+            "slug": slug.current,
+            date,
+            speakerName,
+            scripture,
+            shortDescription,
+            videoUrl,
+            audioUrl,
+
+            series-> {
+              title,
+              "slug": slug.current
+            },
+
+            thumbnail {
+              asset,
+              hotspot,
+              crop,
+              alt
+            }
+          }
+        },
+
+       _type == "mediaSeriesShowcaseSection" => {
+          eyebrow,
+          heading,
+          description,
+          selectionMode,
+          limit,
+          ctaLabel,
+
+          "featuredSeries": *[
+            _type == "sermonSeries" &&
+            featured == true
+          ] | order(_createdAt desc) {
+            _id,
+            title,
+            "slug": slug.current,
+            description,
+
+            image {
+              asset,
+              hotspot,
+              crop,
+              alt
+            },
+
+            "sermonCount": count(*[
+              _type == "sermon" &&
+              references(^._id)
+            ])
+          },
+
+          "latestSeries": *[
+            _type == "sermonSeries"
+          ] | order(_createdAt desc) {
+            _id,
+            title,
+            "slug": slug.current,
+            description,
+
+            image {
+              asset,
+              hotspot,
+              crop,
+              alt
+            },
+
+            "sermonCount": count(*[
+              _type == "sermon" &&
+              references(^._id)
+            ])
+          }
+        }, 
+
+
+        _type == "mediaGalleryShowcaseSection" => {
+          eyebrow,
+          heading,
+          description,
+          selectionMode,
+          ctaLabel,
+
+          "featuredGallery": *[
+            _type == "gallery" &&
+            featured == true
+          ] | order(date desc)[0] {
+            _id,
+            title,
+            "slug": slug.current,
+            date,
+            category,
+            description,
+
+            coverImage {
+              asset,
+              hotspot,
+              crop,
+              alt
+            },
+
+            "photos": items[
+              type == "photo" &&
+              defined(image.asset)
+            ][0...5] {
+              _key,
+              caption,
+              displaySize,
+
+              image {
+                asset,
+                hotspot,
+                crop,
+                alt
+              }
+            }
+          },
+
+          "latestGallery": *[
+            _type == "gallery"
+          ] | order(date desc)[0] {
+            _id,
+            title,
+            "slug": slug.current,
+            date,
+            category,
+            description,
+
+            coverImage {
+              asset,
+              hotspot,
+              crop,
+              alt
+            },
+
+            "photos": items[
+              type == "photo" &&
+              defined(image.asset)
+            ][0...5] {
+              _key,
+              caption,
+              displaySize,
+
+              image {
+                asset,
+                hotspot,
+                crop,
+                alt
+              }
+            }
+          }
+        },
+
+        _type == "mediaConnectSection" => {
+          eyebrow,
+          heading,
+          description,
+          ctaLabel,
+
+          "socials": *[_type == "siteSettings"][0] {
+            socialLinks
+          }
+        },
+
         _type == "valuesSection" => {
           selectionMode,
           theme,
@@ -588,6 +790,16 @@ const page = await sanityClient.fetch(
         },
 
         _type == "livestreamSection" => {
+          eyebrow,
+          heading,
+          accentText,
+          description,
+          layout,
+          image,
+          ctaLabel,
+          liveStreamUrl,
+          featuredVideoUrl,
+
           "siteMedia": *[_type == "siteSettings"][0] {
             liveStreamUrl,
             youtubeChannelUrl,

@@ -15,6 +15,11 @@ import PrayerRequestSection from "./sections/PrayerRequestSection.astro";
 import PeopleGridSection from "./sections/PeopleGridSection.astro";
 import LivestreamSection from "./sections/LivestreamSection.astro";
 import SeriesGridSection from "./sections/SeriesGridSection.astro";
+import MediaLatestMessage from "./sections/MediaLatestMessage.astro";
+import MediaSeriesShowcase from "./sections/MediaSeriesShowcase.astro";
+import MediaGalleryShowcase from "./sections/MediaGalleryShowcase.astro";
+import MediaConnectSection from "./sections/MediaConnectSection.astro";
+import GivingMethodsSection from "./sections/GivingMethodsSection.astro";
 
 const { sections = [] } = Astro.props;
 ---
@@ -69,6 +74,21 @@ const { sections = [] } = Astro.props;
 
     case "seriesGridSection":
       return <SeriesGridSection section={section} />;
+
+    case "mediaLatestMessageSection":
+      return (<MediaLatestMessage section={section} />);
+
+    case "mediaSeriesShowcaseSection": 
+      return (<MediaSeriesShowcase section={section}/>);
+
+    case "mediaGalleryShowcaseSection":
+      return (<MediaGalleryShowcase section={section}/>);
+
+    case "mediaConnectSection":
+      return (<MediaConnectSection section={section}/>);
+
+    case "givingMethodsSection":
+      return <GivingMethodsSection section={section} />;
 
       default:
         console.warn(`Unknown page section: ${section._type}`);

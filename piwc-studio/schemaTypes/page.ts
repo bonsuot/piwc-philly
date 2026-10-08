@@ -61,6 +61,11 @@ export const page = defineType({
         { type: "peopleGridSection" },
         { type: "livestreamSection" },
         { type: "seriesGridSection" },
+        { type: "mediaLatestMessageSection" },
+        { type: "mediaSeriesShowcaseSection" },
+        { type: "mediaGalleryShowcaseSection" },
+        { type: "mediaConnectSection" },
+        { type: "givingMethodsSection" },
       ],
 
       validation: (Rule) => Rule.required().min(1),

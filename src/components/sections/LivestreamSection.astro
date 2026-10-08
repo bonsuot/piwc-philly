@@ -1,8 +1,10 @@
 ---
-import imageUrlBuilder from "@sanity/image-url";
+import { createImageUrlBuilder } from "@sanity/image-url";
 import { sanityClient } from "sanity:client";
 
 const { section } = Astro.props;
+const layout = section?.layout ?? "immersive";
+const isMediaHub = layout === "mediaHub";
 
 const media = section?.siteMedia;
 
@@ -15,7 +17,7 @@ const imageSource =
   section?.image ??
   media?.liveStreamImage;
 
-const builder = imageUrlBuilder(sanityClient);
+const builder = createImageUrlBuilder(sanityClient);
 
 const imageUrl = imageSource?.asset
   ? builder
@@ -29,7 +31,12 @@ const imageUrl = imageSource?.asset
   : null;
 ---
 
-<section class="livestream">
+<section
+  class:list={[
+    "livestream",
+    { "is-media-hub": isMediaHub }
+  ]}
+>
   <div class="container">
 
     <div class="heading">
@@ -406,4 +413,209 @@ const imageUrl = imageSource?.asset
       grid-template-columns: 1fr;
     }
   }
+
+  /* ---------------------------------
+   MEDIA HUB VARIANT
+---------------------------------- */
+
+.livestream.is-media-hub {
+  padding-block: var(--section-space-md);
+}
+
+.is-media-hub .heading {
+  grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+  gap: clamp(2rem, 6vw, 7rem);
+  margin-bottom: clamp(3rem, 5vw, 5rem);
+}
+
+.is-media-hub .heading h2 {
+  max-width: 900px;
+  font-size: clamp(3.5rem, 7vw, 7rem);
+  line-height: 0.88;
+  letter-spacing: -0.045em;
+}
+
+.is-media-hub .accent {
+  margin-top: 1rem;
+  color: var(--color-brand-gold);
+  font-size: clamp(1.8rem, 3vw, 3.25rem);
+  line-height: 1;
+}
+
+.is-media-hub .description {
+  max-width: 430px;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+/* Compact cinematic card */
+
+.is-media-hub .live-card {
+  min-height: auto;
+  aspect-ratio: 16 / 7;
+}
+
+.is-media-hub .live-card > img {
+  transition: transform 900ms ease;
+}
+
+.is-media-hub .live-card:hover > img {
+  transform: scale(1.02);
+}
+
+.is-media-hub .overlay {
+  background:
+    linear-gradient(
+      90deg,
+      rgb(3 14 28 / 88%) 0%,
+      rgb(3 14 28 / 48%) 45%,
+      rgb(3 14 28 / 10%) 78%
+    ),
+    linear-gradient(
+      0deg,
+      rgb(3 14 28 / 45%) 0%,
+      transparent 55%
+    );
+}
+
+.is-media-hub .live-content {
+  top: 0;
+  right: auto;
+  display: flex;
+  width: min(720px, 70%);
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(2rem, 5vw, 5rem);
+}
+
+.is-media-hub .live-indicator {
+  color: var(--color-brand-gold);
+}
+
+.is-media-hub .live-content h3 {
+  margin-top: 1.25rem;
+  font-size: clamp(3rem, 6vw, 6.5rem);
+  line-height: 0.85;
+  letter-spacing: -0.045em;
+}
+
+.is-media-hub .live-content h3 span {
+  margin-top: 0.15em;
+  color: var(--color-brand-gold);
+}
+
+.is-media-hub .live-content a {
+  margin-top: clamp(1.75rem, 3vw, 3rem);
+  transition:
+    transform var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.is-media-hub .live-content a:hover {
+  transform: translateY(-2px);
+  background: white;
+}
+
+/* When actually live */
+
+.is-media-hub .live-player {
+  padding: clamp(1.25rem, 2vw, 2rem);
+  background: rgb(255 255 255 / 4%);
+  border: 1px solid rgb(255 255 255 / 10%);
+}
+
+.is-media-hub .live-player-header {
+  margin-bottom: 1.5rem;
+}
+
+.is-media-hub .video-wrapper {
+  aspect-ratio: 16 / 9;
+}
+
+/* Responsive */
+
+@media (max-width: 900px) {
+  .is-media-hub .heading {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .is-media-hub .live-card {
+    aspect-ratio: 4 / 3;
+  }
+
+  .is-media-hub .live-content {
+    width: min(760px, 90%);
+  }
+}
+
+@media (max-width: 600px) {
+  .livestream.is-media-hub {
+    padding-block: clamp(4.5rem, 15vw, 6rem);
+  }
+
+  .is-media-hub .heading h2 {
+    font-size: clamp(3rem, 14vw, 4.5rem);
+  }
+
+  .is-media-hub .accent {
+    font-size: clamp(1.8rem, 8vw, 2.6rem);
+  }
+
+  .is-media-hub .live-card {
+    min-height: 540px;
+    aspect-ratio: auto;
+  }
+
+  .is-media-hub .live-card > img {
+    object-position: center;
+  }
+
+  .is-media-hub .overlay {
+    background:
+      linear-gradient(
+        0deg,
+        rgb(3 14 28 / 92%) 0%,
+        rgb(3 14 28 / 58%) 55%,
+        rgb(3 14 28 / 18%) 100%
+      );
+  }
+
+  .is-media-hub .live-content {
+    top: auto;
+    right: 0;
+    width: auto;
+    justify-content: flex-end;
+    padding: 1.75rem;
+  }
+
+  .is-media-hub .live-content h3 {
+    font-size: clamp(3rem, 15vw, 4.75rem);
+  }
+
+  .is-media-hub .live-content a {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .is-media-hub .live-player {
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .is-media-hub .live-player-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-media-hub .live-card > img,
+  .is-media-hub .live-content a {
+    transition: none;
+  }
+}
 </style>

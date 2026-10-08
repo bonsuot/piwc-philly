@@ -1,0 +1,399 @@
+---
+const { section } = Astro.props;
+
+const methods = section?.methods ?? [];
+
+const methodLabels: Record<string, string> = {
+  online: "Online Giving",
+  zelle: "Bank Transfer",
+  cashapp: "Mobile Giving",
+  inPerson: "In-Person Giving",
+  other: "Other Giving",
+};
+
+const methodNumbers = (index: number) =>
+  String(index + 1).padStart(2, "0");
+---
+
+<section class="giving-methods" id="ways-to-give">
+  <div class="container">
+
+    <header class="section-header">
+      <div>
+        {section?.eyebrow && (
+          <p class="eyebrow">{section.eyebrow}</p>
+        )}
+
+        <h2>{section?.heading ?? "Simple. Secure. Generous."}</h2>
+      </div>
+
+      {section?.description && (
+        <p class="intro">{section.description}</p>
+      )}
+    </header>
+
+    <div class="methods-grid">
+      {methods.map((method: any, index: number) => {
+        const isCopyMethod =
+          ["zelle", "cashapp"].includes(method.methodType);
+
+        const hasValue =
+          typeof method.displayValue === "string" &&
+          method.displayValue.trim().length > 0;
+
+        const hasLink =
+          typeof method.url === "string" &&
+          /^https:\/\//i.test(method.url);
+
+        const isPlaceholder =
+          method.displayValue === "giving@example.org" ||
+          method.displayValue === "$YourCashtag";
+
+        const canCopy =
+          isCopyMethod && hasValue && !isPlaceholder;
+
+        return (
+          <article
+            class:list={[
+              "method-card",
+              { "is-primary": method.methodType === "online" }
+            ]}
+          >
+            <div class="card-top">
+              <span class="method-number">
+                {methodNumbers(index)}
+              </span>
+
+              <span class="method-type">
+                {methodLabels[method.methodType] ?? "Giving"}
+              </span>
+            </div>
+
+            <div class="card-content">
+              <h3>{method.name}</h3>
+
+              {method.description && (
+                <p class="method-description">
+                  {method.description}
+                </p>
+              )}
+
+              {hasValue && !isPlaceholder && (
+                <div class="giving-value">
+                  <span>
+                    {method.methodType === "zelle"
+                      ? "Zelle recipient"
+                      : "Giving account"}
+                  </span>
+
+                  <strong>{method.displayValue}</strong>
+                </div>
+              )}
+
+              {method.instructions && (
+                <p class="instructions">
+                  {method.instructions}
+                </p>
+              )}
+            </div>
+
+            <div class="card-bottom">
+              {hasLink ? (
+                <a
+                  class="method-action"
+                  href={method.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span>
+                    {method.buttonLabel ?? "Give Now"}
+                  </span>
+                  <span aria-hidden="true">↗</span>
+                </a>
+              ) : canCopy ? (
+                <button
+                  type="button"
+                  class="method-action copy-action"
+                  data-copy-value={method.displayValue}
+                  data-default-label={method.buttonLabel ?? "Copy Details"}
+                >
+                  <span class="action-label">
+                    {method.buttonLabel ?? "Copy Details"}
+                  </span>
+                  <span aria-hidden="true">↗</span>
+                </button>
+              ) : (
+                <span class="method-footer">
+                  {isCopyMethod
+                    ? "Giving details coming soon"
+                    : "Give during worship"}
+                  <span aria-hidden="true">↗</span>
+                </span>
+              )}
+            </div>
+          </article>
+        );
+      })}
+    </div>
+
+    <p class="giving-note">
+      Thank you for supporting the mission and ministry of PIWC Philadelphia.
+    </p>
+
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>(
+    ".giving-methods .copy-action"
+  ).forEach((button) => {
+    button.addEventListener("click", async () => {
+      const value = button.dataset.copyValue;
+      const label = button.querySelector(".action-label");
+
+      if (!value || !label) return;
+
+      try {
+        await navigator.clipboard.writeText(value);
+        label.textContent = "Copied!";
+      } catch {
+        label.textContent = "Unable to copy";
+      }
+    });
+  });
+</script>
+
+<style>
+  .giving-methods {
+    background: var(--color-brand-ivory);
+    color: var(--color-brand-charcoal);
+    padding-block: var(--section-space-md);
+  }
+
+  .section-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+    gap: clamp(2rem, 6vw, 7rem);
+    align-items: end;
+    margin-bottom: clamp(3rem, 6vw, 6rem);
+  }
+
+  .eyebrow {
+    margin: 0 0 1.25rem;
+    color: var(--color-brand-gold-dark);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    max-width: 850px;
+    margin: 0;
+    font-size: clamp(3rem, 6vw, 6rem);
+    line-height: 0.94;
+    letter-spacing: -0.045em;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+
+  .intro {
+    max-width: 420px;
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.75;
+    opacity: 0.7;
+  }
+
+  /* Cards */
+
+  .methods-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1rem, 2vw, 2rem);
+  }
+
+  .method-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 440px;
+    padding: clamp(1.75rem, 3vw, 3rem);
+    background: white;
+    border: 1px solid var(--color-brand-stone);
+    transition:
+      transform var(--transition-base),
+      box-shadow var(--transition-base);
+  }
+
+  .method-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 50px rgb(7 26 51 / 7%);
+  }
+
+  .method-card.is-primary {
+    background: var(--color-brand-navy);
+    color: white;
+    border-color: var(--color-brand-navy);
+  }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: clamp(3rem, 6vw, 5rem);
+  }
+
+  .method-number {
+    font-family: var(--font-editorial);
+    font-size: 2.2rem;
+    font-style: italic;
+    color: var(--color-brand-gold-dark);
+  }
+
+  .is-primary .method-number {
+    color: var(--color-brand-gold);
+  }
+
+  .method-type {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.65;
+  }
+
+  .card-content {
+    flex: 1;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: clamp(2.5rem, 4vw, 4rem);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+
+  .method-description {
+    max-width: 440px;
+    margin: 1.5rem 0 0;
+    font-size: 1rem;
+    line-height: 1.7;
+    opacity: 0.72;
+  }
+
+  .giving-value {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    padding: 1rem 0;
+    border-top: 1px solid currentColor;
+  }
+
+  .giving-value > span {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+
+  .giving-value strong {
+    font-size: clamp(0.9rem, 1.5vw, 1.15rem);
+    overflow-wrap: anywhere;
+  }
+
+  .instructions {
+    margin: 1rem 0 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    opacity: 0.65;
+  }
+
+  .card-bottom {
+    margin-top: 2.5rem;
+  }
+
+  .method-action,
+  .method-footer {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.15rem 0;
+    border: 0;
+    border-top: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-align: left;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .method-action {
+    cursor: pointer;
+  }
+
+  .method-action > span:last-child {
+    font-size: 1.2rem;
+    transition: transform var(--transition-fast);
+  }
+
+  .method-action:hover > span:last-child {
+    transform: translate(4px, -4px);
+  }
+
+  .is-primary .method-action {
+    color: var(--color-brand-gold);
+  }
+
+  .method-footer {
+    opacity: 0.5;
+  }
+
+  .giving-note {
+    margin: 3rem 0 0;
+    font-family: var(--font-editorial);
+    font-size: clamp(1.25rem, 2vw, 1.8rem);
+    font-style: italic;
+    text-align: center;
+    opacity: 0.7;
+  }
+
+  @media (max-width: 900px) {
+    .section-header {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+
+  @media (max-width: 650px) {
+    .methods-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .method-card {
+      min-height: 370px;
+    }
+
+    h2 {
+      font-size: clamp(2.7rem, 12vw, 4.5rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .method-card,
+    .method-action > span:last-child {
+      transition: none;
+    }
+  }
+</style>

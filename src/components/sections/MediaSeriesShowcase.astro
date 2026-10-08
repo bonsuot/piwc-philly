@@ -1,0 +1,435 @@
+---
+import { createImageUrlBuilder } from "@sanity/image-url";
+import { sanityClient } from "sanity:client";
+
+const { section } = Astro.props;
+
+const builder = createImageUrlBuilder(sanityClient);
+
+const sourceSeries =
+  section?.selectionMode === "latest"
+    ? section?.latestSeries ?? []
+    : section?.featuredSeries ?? [];
+
+const limit = section?.limit ?? 3;
+const series = sourceSeries.slice(0, limit);
+
+function imageUrl(image: any) {
+  if (!image?.asset) return null;
+
+  return builder
+    .image(image)
+    .width(1200)
+    .height(675)
+    .fit("crop")
+    .auto("format")
+    .quality(88)
+    .url();
+}
+
+function messageLabel(count: number) {
+  return `${count} ${count === 1 ? "Message" : "Messages"}`;
+}
+---
+
+{
+  series.length > 0 && (
+    <section class="series-showcase">
+      <div class="container">
+
+        <header class="section-header">
+          <div class="heading-group">
+            {section?.eyebrow && (
+              <p class="eyebrow">{section.eyebrow}</p>
+            )}
+
+            <h2>{section?.heading ?? "Message Series"}</h2>
+          </div>
+
+          {section?.description && (
+            <p class="intro">{section.description}</p>
+          )}
+        </header>
+
+        <div
+          class:list={[
+            "series-grid",
+            `series-count-${Math.min(series.length, 4)}`,
+          ]}
+        >
+          {
+            series.map((item: any, index: number) => {
+              const artwork = imageUrl(item.image);
+
+              return (
+                <article class="series-card">
+                  <a
+                    class="artwork"
+                    href={`/media/series/${item.slug}`}
+                    aria-label={`Explore ${item.title}`}
+                  >
+                    {artwork ? (
+                      <img
+                        src={artwork}
+                        alt={item.image?.alt ?? item.title}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div class="artwork-placeholder">
+                        <span>{item.title}</span>
+                      </div>
+                    )}
+
+                    <div class="artwork-overlay"></div>
+
+                    <span class="card-number" aria-hidden="true">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+
+                    <span class="explore">
+                      Explore
+                      <span aria-hidden="true">↗</span>
+                    </span>
+                  </a>
+
+                  <div class="card-content">
+                    <div>
+                      <p class="message-count">
+                        {messageLabel(item.sermonCount ?? 0)}
+                      </p>
+
+                      <h3>
+                        <a href={`/media/series/${item.slug}`}>
+                          {item.title}
+                        </a>
+                      </h3>
+                    </div>
+
+                    {item?.description && (
+                      <p class="series-description">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+                </article>
+              );
+            })
+          }
+        </div>
+
+        <footer class="section-footer">
+          <a class="all-series" href="/media/series">
+            {section?.ctaLabel ?? "View All Series"}
+            <span aria-hidden="true">→</span>
+          </a>
+        </footer>
+
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .series-showcase {
+    overflow: hidden;
+    background: var(--color-brand-navy);
+    color: white;
+    padding:
+      var(--section-space-md)
+      0;
+  }
+
+  /* --------------------------------
+     HEADER
+  -------------------------------- */
+
+  .section-header {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(260px, 400px);
+    gap: 4rem;
+    align-items: end;
+    margin-bottom: clamp(3.5rem, 7vw, 7rem);
+  }
+
+  .eyebrow {
+    margin: 0 0 1.25rem;
+    color: var(--color-brand-gold);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    max-width: 900px;
+    margin: 0;
+    font-size: clamp(3.5rem, 7vw, 7rem);
+    line-height: 0.88;
+    letter-spacing: -0.045em;
+    text-transform: uppercase;
+  }
+
+  .intro {
+    max-width: 360px;
+    margin: 0;
+    font-family: var(--font-editorial);
+    font-size: clamp(1.35rem, 2vw, 1.8rem);
+    font-style: italic;
+    line-height: 1.35;
+    opacity: 0.72;
+  }
+
+  /* --------------------------------
+     SERIES GRID
+  -------------------------------- */
+
+  .series-grid {
+    display: grid;
+    gap: clamp(1.5rem, 3vw, 3rem);
+  }
+
+  .series-count-1 {
+    grid-template-columns: minmax(0, 0.48fr);
+  }
+
+  .series-count-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .series-count-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .series-count-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(1rem, 2vw, 2rem);
+  }
+
+  /* --------------------------------
+     CARD
+  -------------------------------- */
+
+  .series-card {
+    min-width: 0;
+  }
+
+  .artwork {
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: rgb(255 255 255 / 6%);
+    color: white;
+  }
+
+  .artwork img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition:
+      transform 700ms ease,
+      filter 500ms ease;
+  }
+
+  .artwork-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        180deg,
+        rgb(3 14 28 / 3%) 40%,
+        rgb(3 14 28 / 72%) 100%
+      );
+    transition: background var(--transition-base);
+  }
+
+  .artwork:hover img {
+    transform: scale(1.035);
+  }
+
+  .artwork:hover .artwork-overlay {
+    background:
+      linear-gradient(
+        180deg,
+        rgb(3 14 28 / 5%) 30%,
+        rgb(3 14 28 / 82%) 100%
+      );
+  }
+
+  .card-number {
+    position: absolute;
+    top: 1.25rem;
+    left: 1.25rem;
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid rgb(255 255 255 / 35%);
+    border-radius: 50%;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    backdrop-filter: blur(8px);
+  }
+
+  .explore {
+    position: absolute;
+    right: 1.4rem;
+    bottom: 1.4rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .explore > span {
+    font-size: 1rem;
+    transition: transform var(--transition-fast);
+  }
+
+  .artwork:hover .explore > span {
+    transform: translate(3px, -3px);
+  }
+
+  /* --------------------------------
+     CARD CONTENT
+  -------------------------------- */
+
+  .card-content {
+    padding-top: 1.6rem;
+  }
+
+  .message-count {
+    margin: 0 0 0.7rem;
+    color: var(--color-brand-gold);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: clamp(1.75rem, 2.7vw, 3rem);
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+    text-transform: uppercase;
+  }
+
+  h3 a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  h3 a:hover {
+    color: var(--color-brand-gold);
+  }
+
+  .series-description {
+    max-width: 420px;
+    margin: 1rem 0 0;
+    font-size: 0.92rem;
+    line-height: 1.65;
+    opacity: 0.62;
+  }
+
+  /* --------------------------------
+     FOOTER
+  -------------------------------- */
+
+  .section-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: clamp(4rem, 7vw, 7rem);
+    padding-top: 1.75rem;
+    border-top: 1px solid rgb(255 255 255 / 16%);
+  }
+
+  .all-series {
+    display: inline-flex;
+    gap: 1rem;
+    align-items: center;
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .all-series span {
+    color: var(--color-brand-gold);
+    transition: transform var(--transition-fast);
+  }
+
+  .all-series:hover span {
+    transform: translateX(5px);
+  }
+
+  /* --------------------------------
+     RESPONSIVE
+  -------------------------------- */
+
+  @media (max-width: 1050px) {
+    .series-count-3,
+    .series-count-4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 750px) {
+    .section-header {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .intro {
+      max-width: 500px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .series-showcase {
+      padding:
+        clamp(4.5rem, 16vw, 6rem)
+        0;
+    }
+
+    h2 {
+      font-size: clamp(3rem, 14vw, 4.5rem);
+    }
+
+    .series-count-1,
+    .series-count-2,
+    .series-count-3,
+    .series-count-4 {
+      grid-template-columns: 1fr;
+    }
+
+    .card-content {
+      padding-top: 1.25rem;
+    }
+
+    h3 {
+      font-size: clamp(2rem, 9vw, 3rem);
+    }
+
+    .section-footer {
+      justify-content: flex-start;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .artwork img,
+    .artwork-overlay,
+    .explore > span,
+    .all-series span {
+      transition: none;
+    }
+  }
+</style>

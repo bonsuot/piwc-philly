@@ -1,0 +1,262 @@
+---
+const { section } = Astro.props;
+
+const socialLinks = section?.socials?.socialLinks ?? [];
+
+const supportedPlatforms = [
+  "youtube",
+  "instagram",
+  "facebook",
+  "tiktok",
+];
+
+const socials = socialLinks.filter(
+  (social: any) =>
+    social?.url &&
+    supportedPlatforms.includes(
+      String(social?.platform ?? "").toLowerCase()
+    )
+);
+---
+
+<section class="media-connect">
+  <div class="container">
+
+    <div class="connect-grid">
+
+      <div class="connect-heading">
+        {
+          section?.eyebrow && (
+            <p class="eyebrow">
+              {section.eyebrow}
+            </p>
+          )
+        }
+
+        <h2>
+          {section?.heading ?? "Beyond Sunday."}
+        </h2>
+      </div>
+
+      <div class="connect-content">
+        {
+          section?.description && (
+            <p class="description">
+              {section.description}
+            </p>
+          )
+        }
+
+        {
+          socials.length > 0 && (
+            <nav
+              class="social-links"
+              aria-label="PIWC social media"
+            >
+              {
+                socials.map((social: any) => (
+                  <a
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span>
+                      {social.platform}
+                    </span>
+
+                    <span aria-hidden="true">
+                      ↗
+                    </span>
+                  </a>
+                ))
+              }
+            </nav>
+          )
+        }
+
+        <a class="connect-cta" href="/connect">
+          <span>
+            {section?.ctaLabel ?? "Everything PIWC"}
+          </span>
+
+          <span aria-hidden="true">
+            →
+          </span>
+        </a>
+      </div>
+
+    </div>
+
+    <div class="statement" aria-hidden="true">
+      <span>ONE CHURCH.</span>
+      <span>ONE FAMILY.</span>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .media-connect {
+    overflow: hidden;
+    padding:
+      var(--section-space-md)
+      0
+      clamp(4rem, 8vw, 7rem);
+    background: var(--color-brand-gold);
+    color: var(--color-brand-navy);
+  }
+
+  .connect-grid {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1.2fr)
+      minmax(300px, 0.8fr);
+    gap: clamp(4rem, 10vw, 10rem);
+    align-items: start;
+  }
+
+  .eyebrow {
+    margin: 0 0 1.25rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    max-width: 850px;
+    margin: 0;
+    font-size: clamp(4rem, 8vw, 8rem);
+    line-height: 0.84;
+    letter-spacing: -0.05em;
+    text-transform: uppercase;
+  }
+
+  .connect-content {
+    padding-top: clamp(1rem, 3vw, 3rem);
+  }
+
+  .description {
+    max-width: 480px;
+    margin: 0 0 2.5rem;
+    font-size: clamp(1rem, 1.4vw, 1.15rem);
+    line-height: 1.75;
+  }
+
+  /* Social links */
+
+  .social-links {
+    border-top: 1px solid rgb(7 26 51 / 25%);
+  }
+
+  .social-links a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgb(7 26 51 / 25%);
+    color: inherit;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .social-links a span:last-child {
+    font-size: 1rem;
+    transition: transform var(--transition-fast);
+  }
+
+  .social-links a:hover span:last-child {
+    transform: translate(4px, -4px);
+  }
+
+  /* Main connect CTA */
+
+  .connect-cta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    margin-top: 2.5rem;
+    padding: 1.25rem 1.4rem;
+    background: var(--color-brand-navy);
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition:
+      transform var(--transition-fast),
+      background var(--transition-fast);
+  }
+
+  .connect-cta span:last-child {
+    color: var(--color-brand-gold);
+    font-size: 1.1rem;
+    transition: transform var(--transition-fast);
+  }
+
+  .connect-cta:hover {
+    transform: translateY(-2px);
+    background: var(--color-brand-charcoal);
+  }
+
+  .connect-cta:hover span:last-child {
+    transform: translateX(5px);
+  }
+
+  /* Oversized closing statement */
+
+  .statement {
+    display: flex;
+    justify-content: space-between;
+    gap: 3rem;
+    margin-top: clamp(6rem, 12vw, 12rem);
+    padding-top: 1.5rem;
+    border-top: 1px solid rgb(7 26 51 / 25%);
+    font-size: clamp(1.1rem, 2vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+  }
+
+  /* Responsive */
+
+  @media (max-width: 850px) {
+    .connect-grid {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .connect-content {
+      padding-top: 0;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .media-connect {
+      padding-top: clamp(4.5rem, 16vw, 6rem);
+    }
+
+    h2 {
+      font-size: clamp(3.5rem, 16vw, 5rem);
+    }
+
+    .statement {
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-top: 5rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .social-links a span:last-child,
+    .connect-cta,
+    .connect-cta span:last-child {
+      transition: none;
+    }
+  }
+</style>

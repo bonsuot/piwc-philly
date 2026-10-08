@@ -35,6 +35,28 @@ export const livestreamSection = defineType({
     }),
 
     defineField({
+      name: "layout",
+      title: "Layout",
+      type: "string",
+      initialValue: "immersive",
+      options: {
+        layout: "radio",
+        list: [
+          {
+            title: "Immersive",
+            value: "immersive",
+          },
+          {
+            title: "Media Hub",
+            value: "mediaHub",
+          },
+        ],
+      },
+      description:
+        "Use Media Hub for a more compact presentation inside the Media page.",
+    }),
+
+    defineField({
       name: "image",
       title: "Image Override",
       type: "accessibleImage",

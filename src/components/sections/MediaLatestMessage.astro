@@ -1,0 +1,419 @@
+---
+import { createImageUrlBuilder } from "@sanity/image-url";
+import { sanityClient } from "sanity:client";
+
+const { section } = Astro.props;
+
+const sermon =
+  section?.selectionMode === "featured"
+    ? section?.latestFeaturedSermon ?? section?.latestSermon
+    : section?.latestSermon;
+
+const builder = createImageUrlBuilder(sanityClient);
+
+const thumbnail = sermon?.thumbnail?.asset
+  ? builder
+      .image(sermon.thumbnail)
+      .width(1400)
+      .height(900)
+      .fit("crop")
+      .auto("format")
+      .quality(88)
+      .url()
+  : null;
+
+const sermonUrl = sermon?.slug
+  ? `/media/sermons/${sermon.slug}`
+  : "/media/sermons";
+
+const seriesUrl = sermon?.series?.slug
+  ? `/media/series/${sermon.series.slug}`
+  : null;
+
+const formattedDate = sermon?.date
+  ? new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(`${sermon.date}T00:00:00Z`))
+  : null;
+---
+
+{
+  sermon && (
+    <section class="latest-message">
+      <div class="container">
+        <header class="section-header">
+          <div>
+            {section?.eyebrow && (
+              <p class="eyebrow">{section.eyebrow}</p>
+            )}
+
+            <h2>{section?.heading ?? "Word for the Week"}</h2>
+          </div>
+
+          {section?.description && (
+            <p class="intro">{section.description}</p>
+          )}
+        </header>
+
+        <div class="message-grid">
+          <a
+            class="media"
+            href={sermonUrl}
+            aria-label={`Watch ${sermon.title}`}
+          >
+            {thumbnail && (
+              <img
+                src={thumbnail}
+                alt={sermon.thumbnail?.alt ?? sermon.title}
+                loading="lazy"
+              />
+            )}
+
+            <div class="media-overlay"></div>
+
+            <span class="play" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="26"
+                height="26"
+                fill="currentColor"
+              >
+                <path d="M8 5v14l11-7z"></path>
+              </svg>
+            </span>
+
+            <span class="watch-label">Watch message</span>
+          </a>
+
+          <div class="message-content">
+            <div class="message-meta">
+              {sermon?.series?.title && (
+                seriesUrl ? (
+                  <a class="series" href={seriesUrl}>
+                    {sermon.series.title}
+                  </a>
+                ) : (
+                  <span class="series">{sermon.series.title}</span>
+                )
+              )}
+
+              {formattedDate && (
+                <span class="date">{formattedDate}</span>
+              )}
+            </div>
+
+            <h3>{sermon.title}</h3>
+
+            {sermon?.speakerName && (
+              <p class="speaker">By {sermon.speakerName}</p>
+            )}
+
+            {sermon?.scripture && (
+              <p class="scripture">{sermon.scripture}</p>
+            )}
+
+            {sermon?.shortDescription && (
+              <p class="summary">{sermon.shortDescription}</p>
+            )}
+
+            <a class="watch-link" href={sermonUrl}>
+              Watch Message
+              <span aria-hidden="true">→</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="section-footer">
+          <a class="all-messages" href="/media/sermons">
+            {section?.ctaLabel ?? "View All Messages"}
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .latest-message {
+    overflow: hidden;
+    background: var(--color-brand-ivory);
+    color: var(--color-brand-charcoal);
+    padding:
+      var(--section-space-md)
+      0;
+  }
+
+  .section-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
+    gap: 4rem;
+    align-items: end;
+    margin-bottom: clamp(3rem, 6vw, 6rem);
+  }
+
+  .eyebrow {
+    margin: 0 0 1.25rem;
+    color: var(--color-brand-gold-dark);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    max-width: 850px;
+    margin: 0;
+    font-size: clamp(3.5rem, 7vw, 7rem);
+    line-height: 0.9;
+    letter-spacing: -0.045em;
+    text-transform: uppercase;
+  }
+
+  .intro {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    opacity: 0.7;
+  }
+
+  .message-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(330px, 0.65fr);
+    gap: clamp(3rem, 7vw, 8rem);
+    align-items: center;
+  }
+
+  .media {
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: var(--color-brand-navy);
+    color: white;
+  }
+
+  .media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 700ms ease;
+  }
+
+  .media-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        180deg,
+        transparent 40%,
+        rgb(3 14 28 / 58%) 100%
+      );
+  }
+
+  .media:hover img {
+    transform: scale(1.025);
+  }
+
+  .play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    width: 76px;
+    height: 76px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--color-brand-gold);
+    color: var(--color-brand-navy);
+    transform: translate(-50%, -50%);
+    transition:
+      transform var(--transition-base),
+      background var(--transition-base);
+  }
+
+  .media:hover .play {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+
+  .watch-label {
+    position: absolute;
+    right: 1.75rem;
+    bottom: 1.5rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .message-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem 1rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .series {
+    color: var(--color-brand-gold-dark);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  a.series:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.3em;
+  }
+
+  .date {
+    font-size: 0.78rem;
+    opacity: 0.55;
+  }
+
+  .date::before {
+    margin-right: 1rem;
+    content: "•";
+  }
+
+  h3 {
+    margin: 0;
+    font-size: clamp(2.4rem, 4vw, 4.75rem);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+  }
+
+  .speaker {
+    margin: 1.5rem 0 0;
+    font-weight: 700;
+  }
+
+  .scripture {
+    margin: 0.4rem 0 0;
+    font-family: var(--font-editorial);
+    font-size: 1.1rem;
+    font-style: italic;
+    opacity: 0.7;
+  }
+
+  .summary {
+    max-width: 520px;
+    margin: 1.75rem 0 0;
+    font-size: 1rem;
+    line-height: 1.75;
+    opacity: 0.72;
+  }
+
+  .watch-link,
+  .all-messages {
+    display: inline-flex;
+    gap: 1rem;
+    align-items: center;
+    color: inherit;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .watch-link {
+    margin-top: 2rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 2px solid var(--color-brand-gold);
+  }
+
+  .watch-link span,
+  .all-messages span {
+    transition: transform var(--transition-fast);
+  }
+
+  .watch-link:hover span,
+  .all-messages:hover span {
+    transform: translateX(5px);
+  }
+
+  .section-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: clamp(3rem, 6vw, 5rem);
+    padding-top: 1.75rem;
+    border-top: 1px solid rgb(23 23 23 / 15%);
+  }
+
+  .all-messages {
+    color: var(--color-brand-navy);
+  }
+
+  @media (max-width: 950px) {
+    .section-header,
+    .message-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .section-header {
+      gap: 1.5rem;
+    }
+
+    .message-grid {
+      gap: 2.75rem;
+    }
+
+    .message-content {
+      max-width: 700px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .latest-message {
+      padding:
+        clamp(4.5rem, 16vw, 6rem)
+        0;
+    }
+
+    h2 {
+      font-size: clamp(3rem, 14vw, 4.5rem);
+    }
+
+    .media {
+      aspect-ratio: 4 / 3;
+    }
+
+    .play {
+      width: 62px;
+      height: 62px;
+    }
+
+    .watch-label {
+      right: 1rem;
+      bottom: 1rem;
+    }
+
+    h3 {
+      font-size: clamp(2.5rem, 11vw, 3.75rem);
+    }
+
+    .date::before {
+      display: none;
+    }
+
+    .section-footer {
+      justify-content: flex-start;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .media img,
+    .play,
+    .watch-link span,
+    .all-messages span {
+      transition: none;
+    }
+  }
+</style>
